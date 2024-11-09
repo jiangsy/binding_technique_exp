@@ -5,7 +5,7 @@ Require Import binder.autosubst2.def.
 Require Import binder.autosubst2.prop_as_core.
 Require Import binder.autosubst2.prop_as_unscoped.
 
-Definition ctx := list ty.
+Definition ctx := list ftyp.
 
 Definition lookup_fun {T} n (Δ : list T) :=
   nth_error Δ n.
@@ -34,24 +34,24 @@ Import UnscopedNotations.
 
 Reserved Notation "Γ ⊢ t : A" 
   (at level 50, t at next level, no associativity).
-Inductive typing : ctx -> tm -> ty -> Prop :=
-| typing_var : forall (Γ : ctx) (i : nat) (A : ty),
+Inductive typing : ctx -> fexp -> ftyp -> Prop :=
+| typing_var : forall (Γ : ctx) (i : nat) (A : ftyp),
   lookup i Γ A ->
-  Γ ⊢ (var_tm i) : A
-| typing_lam : forall (Γ : ctx) (A B : ty) (t : tm),
+  Γ ⊢ (fexp_var i) : A
+| typing_abs : forall (Γ : ctx) (A B : ftyp) (t : fexp),
   (A :: Γ) ⊢ t : B ->
-  Γ ⊢ (lam A t) : (arr A B)
-| typing_app : forall (Γ : ctx) (s t : tm) (A B : ty),
-  Γ ⊢ s : (arr A B) ->
+  Γ ⊢ (fexp_abs A t) : (ftyp_arr A B)
+| typing_app : forall (Γ : ctx) (s t : fexp) (A B : ftyp),
+  Γ ⊢ s : (ftyp_arr A B) ->
   Γ ⊢ t : A ->
-  Γ ⊢ (app s t) : B
-| typing_tlam : forall (Γ : ctx) (t : tm) (A : ty),
-  (map (ren_ty shift) Γ) ⊢ t : A ->
-  Γ ⊢ (tlam t) : (all A)
-| typing_tapp : forall (Γ : ctx) (t : tm) (A B A' : ty),
-  Γ ⊢ t : (all A) ->
+  Γ ⊢ (fexp_app s t) : B
+| typing_tabs : forall (Γ : ctx) (t : fexp) (A : ftyp),
+  (map (ren_ftyp shift) Γ) ⊢ t : A ->
+  Γ ⊢ (fexp_tabs t) : (ftyp_all A)
+| typing_tapp : forall (Γ : ctx) (t : fexp) (A B A' : ftyp),
+  Γ ⊢ t : (ftyp_all A) ->
   A' = A [B..] ->
-  Γ ⊢ tapp t B : A'
+  Γ ⊢ fexp_tapp t B : A'
 where "Γ ⊢ t : A" := (typing Γ t A).
 
 Definition ctx_var_rename {T} ζ Γ Δ :=
@@ -85,21 +85,21 @@ Theorem typing_rename Γ t A :
   Γ ⊢ t : A ->
   forall Δ ξ ζ,
     ctx_var_rename ζ Γ Δ ->
-    (map (ren_ty ξ) Δ) ⊢ t ⟨ξ;ζ⟩ : A ⟨ξ⟩.
+    (map (ren_ftyp ξ) Δ) ⊢ t ⟨ξ;ζ⟩ : A ⟨ξ⟩.
 Proof.
   intros H. induction H; intros; asimpl.
   - eapply typing_var.
     eapply lookup_map; eauto.
-  - eapply typing_lam.
-    replace ((ren_ty ξ A) :: (list_map (ren_ty ξ) Δ)) with (map (ren_ty ξ) (A :: Δ)) by auto.
+  - eapply typing_abs.
+    replace ((ren_ftyp ξ A) :: (list_map (ren_ftyp ξ) Δ)) with (map (ren_ftyp ξ) (A :: Δ)) by auto.
     eapply IHtyping; eauto.
     unfold ctx_var_rename; intros.
     inversion H1; subst; eauto.
     fsimpl. inversion H1; subst; eauto. econstructor.
     eapply H0; eauto.
   - eapply typing_app; eauto. 
-  - eapply typing_tlam; asimpl; eauto.
-    apply ctx_var_rename_map with (f := ren_ty ↑) in H0.
+  - eapply typing_tabs; asimpl; eauto.
+    apply ctx_var_rename_map with (f := ren_ftyp ↑) in H0.
     eapply IHtyping with (ξ := 0 .: ξ >> S) in H0; eauto.
     erewrite list_comp; eauto.
     erewrite list_comp in H0; eauto.
@@ -112,7 +112,7 @@ Proof.
 Qed.
 
 Lemma ctx_map_id : forall Γ,
-  map (ren_ty id) Γ = Γ.
+  map (ren_ftyp id) Γ = Γ.
 Proof.
   intros. induction Γ; simpl; eauto.
   rewrite <- IHΓ at 2; asimpl; eauto.
