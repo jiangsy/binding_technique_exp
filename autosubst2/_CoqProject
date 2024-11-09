@@ -1,0 +1,3 @@
+-R . autosubst2
+-arg -w
+-arg -deprecated-hint-without-locality,-omega-is-deprecated

@@ -1,0 +1,3 @@
+-R . lngen
+-arg -w
+-arg -deprecated-hint-without-locality,-omega-is-deprecated

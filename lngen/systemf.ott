@@ -1,0 +1,29 @@
+metavar typvar, X, Y, Z ::= {{ repr-locally-nameless }}
+metavar expvar, x, y, z ::= {{ repr-locally-nameless }}
+
+grammar
+
+ftyp, A, B, C :: ftyp_ ::=
+  | X              ::   :: var
+  | A1 -> A2       ::   :: arrow
+  | ∀ X . A        ::   :: all  (+ bind X in A +)
+  | ( A )          :: S :: paren {{ coq ([[A]]) }}
+  | { A2 / X } A1  :: M :: subst {{ coq (open_ftyp_wrt_ftyp [[X A1]] [[A2]]) }}
+
+fexp, e, f, g :: fexp_ ::=
+  | x                                   ::   :: var
+  | \ x : A . e                         ::   :: abs  (+ bind x in e +)
+  | e1 e2                               ::   :: app
+  | \ X . e                             ::   :: tabs (+ bind X in e +)
+  | e @ A                               ::   :: tapp
+  | ( e )                               :: S :: paren  {{ coq ([[e]]) }}
+  | { e2 / x } e1                       :: M :: subst1 {{ coq (open_fexp_wrt_fexp [[x e1]] [[e2]]) }}
+  | { A2 / X } e1                       :: M :: subst2 {{ coq (open_fexp_wrt_ftyp [[X e1]] [[A2]]) }}
+
+substitutions
+  single A X :: subst_ftyp_in
+  single e x :: subst_fexp_in
+
+freevars
+  A X :: ftvar_in
+  e x :: fvar_in
