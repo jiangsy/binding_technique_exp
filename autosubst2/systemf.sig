@@ -1,15 +1,15 @@
 -- Signature for System F
 
 -- the types
-ty : Type
-tm : Type
+ftyp : Type
+fexp : Type
 
--- the constructors for ty
-arr : ty -> ty -> ty
-all : (bind ty in ty) -> ty
+-- the constructors for ftyp
+ftyp_arr : ftyp -> ftyp -> ftyp
+ftyp_all : (bind ftyp in ftyp) -> ftyp
 
--- the constructors for tm
-app  : tm -> tm -> tm
-lam  : ty -> (bind tm in tm) -> tm
-tapp : tm -> ty -> tm
-tlam : (bind ty in tm) -> tm
+-- the constructors for fexp
+fexp_app  : fexp -> fexp -> fexp
+fexp_abs  : ftyp -> (bind fexp in fexp) -> fexp
+fexp_tapp : fexp -> ftyp -> fexp
+fexp_tabs : (bind ftyp in fexp) -> fexp
