@@ -1,3 +1,4 @@
+Require Import Coq.Program.Equality.
 Require Import List.
 
 Require Import binder.autosubst2.def.
@@ -63,6 +64,24 @@ Proof.
   intros. induction H; simpl; eauto.
 Qed.
 
+Lemma lookup_map_inv {T} : forall x A' (f : T -> T) Γ,
+  lookup x (map f Γ) A' -> exists A, A' = (f A) /\ lookup x Γ A.
+Proof.
+  intros. dependent induction H; destruct Γ; inversion x; subst; eauto.
+  pose proof (IHlookup _ _ (eq_refl _)).
+  destruct H0; subst; intuition; eauto.
+Qed.
+
+Lemma ctx_var_rename_map {T} : forall Γ Δ ζ (f : T -> T),
+  ctx_var_rename ζ Γ Δ -> ctx_var_rename ζ (list_map f Γ) (list_map f Δ).
+Proof.
+  intros. unfold ctx_var_rename in *. intros.
+  apply lookup_map_inv in H0. destruct H0 as [A' [Hf Hl]].
+  subst.
+  apply H in Hl.
+  apply lookup_map; eauto.
+Qed.
+
 Lemma typing_rename Γ t A : 
   Γ ⊢ t : A ->
   forall Δ ξ ζ,
@@ -72,11 +91,40 @@ Proof.
   intros H. induction H; intros; asimpl.
   - eapply typing_var.
     eapply lookup_map; eauto.
-  - eapply typing_lam. admit.
+  - eapply typing_lam.
+    replace ((ren_ty ξ A) :: (list_map (ren_ty ξ) Δ)) with (map (ren_ty ξ) (A :: Δ)) by auto.
+    eapply IHtyping; eauto.
+    unfold ctx_var_rename; intros.
+    inversion H1; subst; eauto.
+    fsimpl. inversion H1; subst; eauto. econstructor.
+    eapply H0; eauto.
   - eapply typing_app; eauto. 
   - eapply typing_tlam; asimpl; eauto.
-    admit. 
-  - eapply typing_tapp with (A:=A ⟨up_ren ξ⟩).
-    + fsimpl. eauto.
-    + admit.
-Admitted.
+    apply ctx_var_rename_map with (f := ren_ty ↑) in H0.
+    eapply IHtyping with (ξ := 0 .: ξ >> S) in H0; eauto.
+    erewrite list_comp; eauto.
+    erewrite list_comp in H0; eauto.
+    intros. asimpl; auto.
+  - rewrite H0.
+    eapply IHtyping with (ξ := ξ) in H1; eauto.
+    eapply typing_tapp with (A:=A ⟨up_ren ξ⟩).
+    + eauto.
+    + asimpl. auto.
+Qed.
+
+Lemma ctx_map_id : forall Γ,
+  map (ren_ty id) Γ = Γ.
+Proof.
+  intros. induction Γ; simpl; eauto.
+  rewrite <- IHΓ at 2; asimpl; eauto.
+Qed.
+
+Corollary typing_weaken : forall Γ t A B,
+  Γ ⊢ t : A ->
+  (B :: Γ) ⊢ t ⟨id ; ↑⟩ : A.
+Proof.
+  intros. rewrite <- (ctx_map_id (B :: Γ)).
+  replace A with (A ⟨id⟩) by (asimpl; auto).
+  eapply typing_rename; eauto.
+  - unfold ctx_var_rename. intros. eauto.
+Qed.
