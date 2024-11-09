@@ -5,7 +5,7 @@ grammar
 
 ftyp, A, B, C :: ftyp_ ::=
   | X              ::   :: var
-  | A1 -> A2       ::   :: arrow
+  | A1 -> A2       ::   :: arr
   | ∀ X . A        ::   :: all  (+ bind X in A +)
   | ( A )          :: S :: paren {{ coq ([[A]]) }}
   | { A2 / X } A1  :: M :: subst {{ coq (open_ftyp_wrt_ftyp [[X A1]] [[A2]]) }}

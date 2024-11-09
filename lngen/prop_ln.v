@@ -41,7 +41,7 @@ Fixpoint size_ftyp (A1 : ftyp) {struct A1} : nat :=
   match A1 with
     | ftyp_var_f X1 => 1
     | ftyp_var_b n1 => 1
-    | ftyp_arrow A2 A3 => 1 + (size_ftyp A2) + (size_ftyp A3)
+    | ftyp_arr A2 A3 => 1 + (size_ftyp A2) + (size_ftyp A3)
     | ftyp_all A2 => 1 + (size_ftyp A2)
   end.
 
@@ -70,7 +70,7 @@ Inductive degree_ftyp_wrt_ftyp : nat -> ftyp -> Prop :=
   | degree_wrt_ftyp_ftyp_arrow : forall n1 A1 A2,
     degree_ftyp_wrt_ftyp n1 A1 ->
     degree_ftyp_wrt_ftyp n1 A2 ->
-    degree_ftyp_wrt_ftyp n1 (ftyp_arrow A1 A2)
+    degree_ftyp_wrt_ftyp n1 (ftyp_arr A1 A2)
   | degree_wrt_ftyp_ftyp_all : forall n1 A1,
     degree_ftyp_wrt_ftyp (S n1) A1 ->
     degree_ftyp_wrt_ftyp n1 (ftyp_all A1).
@@ -144,7 +144,7 @@ Inductive lc_set_ftyp : ftyp -> Set :=
   | lc_set_ftyp_arrow : forall A1 A2,
     lc_set_ftyp A1 ->
     lc_set_ftyp A2 ->
-    lc_set_ftyp (ftyp_arrow A1 A2)
+    lc_set_ftyp (ftyp_arr A1 A2)
   | lc_set_ftyp_all : forall A1,
     (forall X1 : typvar, lc_set_ftyp (open_ftyp_wrt_ftyp A1 (ftyp_var_f X1))) ->
     lc_set_ftyp (ftyp_all A1).

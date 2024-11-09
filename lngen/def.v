@@ -9,7 +9,7 @@ Definition expvar : Set := var.
 Inductive ftyp : Set := 
  | ftyp_var_b (_:nat)
  | ftyp_var_f (X:typvar)
- | ftyp_arrow (A1:ftyp) (A2:ftyp)
+ | ftyp_arr (A1:ftyp) (A2:ftyp)
  | ftyp_all (A:ftyp).
 
 Inductive fexp : Set := 
@@ -35,7 +35,7 @@ Fixpoint open_ftyp_wrt_ftyp_rec (k:nat) (A_5:ftyp) (A__6:ftyp) {struct A__6}: ft
         | inright _ => ftyp_var_b (nat - 1)
       end
   | (ftyp_var_f X) => ftyp_var_f X
-  | (ftyp_arrow A1 A2) => ftyp_arrow (open_ftyp_wrt_ftyp_rec k A_5 A1) (open_ftyp_wrt_ftyp_rec k A_5 A2)
+  | (ftyp_arr A1 A2) => ftyp_arr (open_ftyp_wrt_ftyp_rec k A_5 A1) (open_ftyp_wrt_ftyp_rec k A_5 A2)
   | (ftyp_all A) => ftyp_all (open_ftyp_wrt_ftyp_rec (S k) A_5 A)
 end.
 
@@ -78,7 +78,7 @@ Fixpoint close_ftyp_wrt_ftyp_rec (k:nat) (A_5:var) (A__6:ftyp) {struct A__6}: ft
          then ftyp_var_b nat
          else ftyp_var_b (S nat)
   | (ftyp_var_f X) => if (A_5 === X) then (ftyp_var_b k) else (ftyp_var_f X)
-  | (ftyp_arrow A1 A2) => ftyp_arrow (close_ftyp_wrt_ftyp_rec k A_5 A1) (close_ftyp_wrt_ftyp_rec k A_5 A2)
+  | (ftyp_arr A1 A2) => ftyp_arr (close_ftyp_wrt_ftyp_rec k A_5 A1) (close_ftyp_wrt_ftyp_rec k A_5 A2)
   | (ftyp_all A) => ftyp_all (close_ftyp_wrt_ftyp_rec (S k) A_5 A)
 end.
 
@@ -121,7 +121,7 @@ Inductive lc_ftyp : ftyp -> Prop :=    (* defn lc_ftyp *)
  | lc_ftyp_arrow : forall (A1 A2:ftyp),
      (lc_ftyp A1) ->
      (lc_ftyp A2) ->
-     (lc_ftyp (ftyp_arrow A1 A2))
+     (lc_ftyp (ftyp_arr A1 A2))
  | lc_ftyp_all : forall (A:ftyp),
       ( forall X , lc_ftyp  ( open_ftyp_wrt_ftyp A (ftyp_var_f X) )  )  ->
      (lc_ftyp (ftyp_all A)).
@@ -150,7 +150,7 @@ Fixpoint ftvar_in_ftyp (A_5:ftyp) : vars :=
   match A_5 with
   | (ftyp_var_b nat) => {}
   | (ftyp_var_f X) => {{X}}
-  | (ftyp_arrow A1 A2) => (ftvar_in_ftyp A1) \u (ftvar_in_ftyp A2)
+  | (ftyp_arr A1 A2) => (ftvar_in_ftyp A1) \u (ftvar_in_ftyp A2)
   | (ftyp_all A) => (ftvar_in_ftyp A)
 end.
 
@@ -179,7 +179,7 @@ Fixpoint subst_ftyp_in_ftyp (A_5:ftyp) (X5:typvar) (A__6:ftyp) {struct A__6} : f
   match A__6 with
   | (ftyp_var_b nat) => ftyp_var_b nat
   | (ftyp_var_f X) => (if eq_var X X5 then A_5 else (ftyp_var_f X))
-  | (ftyp_arrow A1 A2) => ftyp_arrow (subst_ftyp_in_ftyp A_5 X5 A1) (subst_ftyp_in_ftyp A_5 X5 A2)
+  | (ftyp_arr A1 A2) => ftyp_arr (subst_ftyp_in_ftyp A_5 X5 A1) (subst_ftyp_in_ftyp A_5 X5 A2)
   | (ftyp_all A) => ftyp_all (subst_ftyp_in_ftyp A_5 X5 A)
 end.
 
