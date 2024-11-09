@@ -6,4 +6,4 @@
 ./autosubst2/typing.v
 
 ./lngen/def.v
-./lngen/ln.v
+./lngen/prop_ln.v
