@@ -5,7 +5,6 @@ Require Import binder.autosubst2.def.
 Require Import binder.autosubst2.prop_as_core.
 Require Import binder.autosubst2.prop_as_unscoped.
 
-
 Definition ctx := list ty.
 
 Definition lookup_fun {T} n (Δ : list T) :=
@@ -82,7 +81,7 @@ Proof.
   apply lookup_map; eauto.
 Qed.
 
-Lemma typing_rename Γ t A : 
+Theorem typing_rename Γ t A : 
   Γ ⊢ t : A ->
   forall Δ ξ ζ,
     ctx_var_rename ζ Γ Δ ->
@@ -128,3 +127,20 @@ Proof.
   eapply typing_rename; eauto.
   - unfold ctx_var_rename. intros. eauto.
 Qed.
+
+Definition ctx_var_subst Γ Δ τ ρ := 
+  forall x A, lookup x Γ A -> Δ ⊢ τ x : A [ρ].
+
+Theorem typing_subst Γ t A : 
+  Γ ⊢ t : A ->
+  forall Δ τ ρ,
+    (* maybe some wf conditions? *)
+    ctx_var_subst Γ Δ τ ρ ->
+    Δ ⊢ t [ρ;τ] : A [ρ].
+Proof.
+  intros H. induction H; asimpl; intros; eauto.
+  - admit.
+  - admit.
+  - admit.
+  - admit.
+Admitted.
