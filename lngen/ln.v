@@ -5,7 +5,7 @@ Require Import Coq.Program.Equality.
 Require Export Metalib.Metatheory.
 Require Export Metalib.LibLNgen.
 
-Require Export systemf.
+Require Export lngen.def.
 
 Local Set Warnings "-non-recursive". 
 
@@ -221,6 +221,18 @@ Definition body_fexp_wrt_fexp e1 := forall x1, lc_fexp (open_fexp_wrt_fexp e1 (f
 (** * Tactic support *)
 
 (** Additional hint declarations. *)
+
+
+Lemma plus_le_compat_l : forall n m p, n <= m -> p + n <= p + m.
+Proof.
+  induction p; simpl in |- *; auto with arith.
+Qed.
+
+Lemma plus_le_compat : forall n m p q, n <= m -> p <= q -> n + p <= m + q.
+Proof.
+  intros n m p q H H0.
+  elim H; simpl in |- *; auto with arith.
+Qed.
 
 #[export] Hint Resolve plus_le_compat : lngen.
 
@@ -2057,7 +2069,6 @@ match goal with
   | |- _ = _ => reflexivity
   | _ => idtac
 end;
-instantiate;
 (* everything should be easy now *)
 default_simp.
 Qed.
@@ -2097,7 +2108,6 @@ match goal with
   | |- _ = _ => reflexivity
   | _ => idtac
 end;
-instantiate;
 (* everything should be easy now *)
 default_simp.
 Qed.
@@ -2356,7 +2366,6 @@ match goal with
   | |- _ = _ => reflexivity
   | _ => idtac
 end;
-instantiate;
 (* everything should be easy now *)
 default_simp.
 Qed.
@@ -2399,7 +2408,6 @@ match goal with
   | |- _ = _ => reflexivity
   | _ => idtac
 end;
-instantiate;
 (* everything should be easy now *)
 default_simp.
 Qed.

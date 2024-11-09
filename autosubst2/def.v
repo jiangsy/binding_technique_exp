@@ -1,4 +1,5 @@
-Require Import autosubst2.prop_as_core prop_as_unscoped.
+Require Import binder.autosubst2.prop_as_core.
+Require Import binder.autosubst2.prop_as_unscoped.
 
 Require Import Setoid Morphisms Relation_Definitions.
 

@@ -1,0 +1,9 @@
+-R . binder
+
+./autosubst2/def.v
+./autosubst2/prop_as_core.v
+./autosubst2/prop_as_unscoped.v
+./autosubst2/typing.v
+
+./lngen/def.v
+./lngen/ln.v

@@ -1,5 +1,9 @@
 Require Import List.
-Require Import def prop_as_core prop_as_unscoped.
+
+Require Import binder.autosubst2.def.
+Require Import binder.autosubst2.prop_as_core.
+Require Import binder.autosubst2.prop_as_unscoped.
+
 
 Definition ctx := list ty.
 
