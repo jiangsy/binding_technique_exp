@@ -6,9 +6,9 @@ dist-newstyle/
 
 examples/index.html
 
-Makefile.coq
-.Makefile.coq.d
-Makefile.coq.conf
+CoqMakefile
+CoqMakefile.conf
+.CoqMakefile.d
 
 *.vo
 *.vok
