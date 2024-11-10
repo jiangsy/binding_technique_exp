@@ -5,7 +5,7 @@ Require Import Coq.Program.Equality.
 Require Export Metalib.Metatheory.
 Require Export Metalib.LibLNgen.
 
-Require Export lngen.def.
+Require Export binder.lngen.def.
 
 Local Set Warnings "-non-recursive". 
 
@@ -32,6 +32,44 @@ Combined Scheme fexp_mutind from fexp_ind'.
 Scheme fexp_rec' := Induction for fexp Sort Set.
 
 Combined Scheme fexp_mutrec from fexp_rec'.
+
+
+(* *********************************************************************** *)
+(** * Close *)
+
+Fixpoint close_ftyp_wrt_ftyp_rec (n1 : nat) (X1 : typvar) (A1 : ftyp) {struct A1} : ftyp :=
+  match A1 with
+    | ftyp_var_f X2 => if (X1 == X2) then (ftyp_var_b n1) else (ftyp_var_f X2)
+    | ftyp_var_b n2 => if (lt_ge_dec n2 n1) then (ftyp_var_b n2) else (ftyp_var_b (S n2))
+    | ftyp_arr A2 A3 => ftyp_arr (close_ftyp_wrt_ftyp_rec n1 X1 A2) (close_ftyp_wrt_ftyp_rec n1 X1 A3)
+    | ftyp_all A2 => ftyp_all (close_ftyp_wrt_ftyp_rec (S n1) X1 A2)
+  end.
+
+Definition close_ftyp_wrt_ftyp X1 A1 := close_ftyp_wrt_ftyp_rec 0 X1 A1.
+
+Fixpoint close_fexp_wrt_ftyp_rec (n1 : nat) (X1 : typvar) (e1 : fexp) {struct e1} : fexp :=
+  match e1 with
+    | fexp_var_f x1 => fexp_var_f x1
+    | fexp_var_b n2 => fexp_var_b n2
+    | fexp_abs A1 e2 => fexp_abs (close_ftyp_wrt_ftyp_rec n1 X1 A1) (close_fexp_wrt_ftyp_rec n1 X1 e2)
+    | fexp_app e2 e3 => fexp_app (close_fexp_wrt_ftyp_rec n1 X1 e2) (close_fexp_wrt_ftyp_rec n1 X1 e3)
+    | fexp_tabs e2 => fexp_tabs (close_fexp_wrt_ftyp_rec (S n1) X1 e2)
+    | fexp_tapp e2 A1 => fexp_tapp (close_fexp_wrt_ftyp_rec n1 X1 e2) (close_ftyp_wrt_ftyp_rec n1 X1 A1)
+  end.
+
+Fixpoint close_fexp_wrt_fexp_rec (n1 : nat) (x1 : expvar) (e1 : fexp) {struct e1} : fexp :=
+  match e1 with
+    | fexp_var_f x2 => if (x1 == x2) then (fexp_var_b n1) else (fexp_var_f x2)
+    | fexp_var_b n2 => if (lt_ge_dec n2 n1) then (fexp_var_b n2) else (fexp_var_b (S n2))
+    | fexp_abs A1 e2 => fexp_abs A1 (close_fexp_wrt_fexp_rec (S n1) x1 e2)
+    | fexp_app e2 e3 => fexp_app (close_fexp_wrt_fexp_rec n1 x1 e2) (close_fexp_wrt_fexp_rec n1 x1 e3)
+    | fexp_tabs e2 => fexp_tabs (close_fexp_wrt_fexp_rec n1 x1 e2)
+    | fexp_tapp e2 A1 => fexp_tapp (close_fexp_wrt_fexp_rec n1 x1 e2) A1
+  end.
+
+Definition close_fexp_wrt_ftyp X1 e1 := close_fexp_wrt_ftyp_rec 0 X1 e1.
+
+Definition close_fexp_wrt_fexp x1 e1 := close_fexp_wrt_fexp_rec 0 x1 e1.
 
 
 (* *********************************************************************** *)
@@ -67,7 +105,7 @@ Inductive degree_ftyp_wrt_ftyp : nat -> ftyp -> Prop :=
   | degree_wrt_ftyp_ftyp_var_b : forall n1 n2,
     lt n2 n1 ->
     degree_ftyp_wrt_ftyp n1 (ftyp_var_b n2)
-  | degree_wrt_ftyp_ftyp_arrow : forall n1 A1 A2,
+  | degree_wrt_ftyp_ftyp_arr : forall n1 A1 A2,
     degree_ftyp_wrt_ftyp n1 A1 ->
     degree_ftyp_wrt_ftyp n1 A2 ->
     degree_ftyp_wrt_ftyp n1 (ftyp_arr A1 A2)
@@ -141,14 +179,13 @@ Combined Scheme degree_fexp_wrt_fexp_mutind from degree_fexp_wrt_fexp_ind'.
 Inductive lc_set_ftyp : ftyp -> Set :=
   | lc_set_ftyp_var_f : forall X1,
     lc_set_ftyp (ftyp_var_f X1)
-  | lc_set_ftyp_arrow : forall A1 A2,
+  | lc_set_ftyp_arr : forall A1 A2,
     lc_set_ftyp A1 ->
     lc_set_ftyp A2 ->
     lc_set_ftyp (ftyp_arr A1 A2)
   | lc_set_ftyp_all : forall A1,
     (forall X1 : typvar, lc_set_ftyp (open_ftyp_wrt_ftyp A1 (ftyp_var_f X1))) ->
     lc_set_ftyp (ftyp_all A1).
-
 Scheme lc_ftyp_ind' := Induction for lc_ftyp Sort Prop.
 
 Combined Scheme lc_ftyp_mutind from lc_ftyp_ind'.
@@ -183,7 +220,6 @@ Inductive lc_set_fexp : fexp -> Set :=
     lc_set_fexp e1 ->
     lc_set_ftyp A1 ->
     lc_set_fexp (fexp_tapp e1 A1).
-
 Scheme lc_fexp_ind' := Induction for lc_fexp Sort Prop.
 
 Combined Scheme lc_fexp_mutind from lc_fexp_ind'.
@@ -222,19 +258,7 @@ Definition body_fexp_wrt_fexp e1 := forall x1, lc_fexp (open_fexp_wrt_fexp e1 (f
 
 (** Additional hint declarations. *)
 
-
-Lemma plus_le_compat_l : forall n m p, n <= m -> p + n <= p + m.
-Proof.
-  induction p; simpl in |- *; auto with arith.
-Qed.
-
-Lemma plus_le_compat : forall n m p q, n <= m -> p <= q -> n + p <= m + q.
-Proof.
-  intros n m p q H H0.
-  elim H; simpl in |- *; auto with arith.
-Qed.
-
-#[export] Hint Resolve plus_le_compat : lngen.
+#[export] Hint Resolve Nat.add_le_mono : lngen.
 
 (** Redefine some tactics. *)
 

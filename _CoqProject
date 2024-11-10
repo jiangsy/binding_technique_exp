@@ -7,3 +7,4 @@
 
 ./lngen/def.v
 ./lngen/prop_ln.v
+./lngen/typing.v
