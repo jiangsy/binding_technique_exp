@@ -71,6 +71,12 @@ Proof.
   destruct H0; subst; intuition; eauto.
 Qed.
 
+Lemma ctx_var_rename_refl {T} : forall Γ : list T,
+  ctx_var_rename id Γ Γ.
+Proof.
+  intros. unfold ctx_var_rename. intros. eauto.
+Qed.
+
 Lemma ctx_var_rename_map {T} : forall Γ Δ ζ (f : T -> T),
   ctx_var_rename ζ Γ Δ -> ctx_var_rename ζ (list_map f Γ) (list_map f Δ).
 Proof.
@@ -138,9 +144,24 @@ Theorem typing_subst Γ t A :
     ctx_var_subst Γ Δ τ ρ ->
     Δ ⊢ t [ρ;τ] : A [ρ].
 Proof.
-  intros H. induction H; asimpl; intros; eauto.
-  - admit.
-  - admit.
-  - admit.
-  - admit.
-Admitted.
+  intros H. induction H; asimpl; intros.
+  - eauto.
+  - eapply typing_abs.
+    assert (ctx_var_subst (A :: Γ) (A [ρ] :: Δ) ((up_fexp_fexp τ)) (ρ)).
+    + unfold ctx_var_subst in *. intros.
+      inversion H1; subst; asimpl; eauto.
+      * econstructor; eauto.
+      * apply H0 in H6. fsimpl. eauto. 
+        apply typing_weaken with (B:=A [ρ]) in H6. eauto.
+    + eapply IHtyping in H1. asimpl. eauto.
+  - eapply typing_app; eauto. 
+  - eapply typing_tabs.
+    eapply IHtyping. unfold ctx_var_subst in *. intros.
+    apply lookup_map_inv in H1. destruct H1 as [A' [Hf Hl]]. subst.
+    apply H0 in Hl.
+    eapply typing_rename with (ξ:=↑) (ζ:=id) (Δ:=Δ) in Hl.
+    + generalize Hl. asimpl. intros. auto. 
+    + eapply ctx_var_rename_refl; eauto. 
+  - eapply typing_tapp with (A := subst_ftyp (up_ftyp_ftyp ρ) A); eauto.
+    + rewrite H0. asimpl. auto.
+Qed.
