@@ -5,7 +5,7 @@ Require Import Coq.Program.Equality.
 Require Export Metalib.Metatheory.
 Require Export Metalib.LibLNgen.
 
-Require Export stlc.lngen.def.
+Require Export stlc.lngen.def_ott.
 
 Local Set Warnings "-non-recursive". 
 

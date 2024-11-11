@@ -1,0 +1,1 @@
+Require Import stlc.autosubst2.def.

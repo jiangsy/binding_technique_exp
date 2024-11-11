@@ -1,4 +1,4 @@
-Require Import systemf.lngen.def.
+Require Import systemf.lngen.def_ott.
 Require Import systemf.lngen.prop_ln.
 
 

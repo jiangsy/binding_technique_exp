@@ -17,33 +17,43 @@ endif
 SYSTEMS := systemf stlc
 IGNORE_DIRS := "test"
 
-OTT_OUTS   := $(addsuffix /lngen/def.v,${SYSTEMS})
-LNGEN_OUTS := $(addsuffix /lngen/prop_ln.v,${SYSTEMS})
-AUTOSUBST2_OUTS := $(addsuffix /autosubst2/def.v,${SYSTEMS})
+# https://stackoverflow.com/questions/3774568/makefile-issue-smart-way-to-scan-directory-tree-for-c-files
+rwildcard=$(wildcard $(addsuffix $2, $1))$(foreach d,$(wildcard $(addsuffix *, $1)),$(call rwildcard,$d/,$2))
+ALL_SIGS_:= $(call rwildcard,${SYSTEMS},*.sig)
+ALL_SIGS:= $(shell echo ${ALL_SIGS_})
+ALL_OTTS_:= $(call rwildcard,${SYSTEMS},*.ott)
+ALL_OTTS:= $(shell echo ${ALL_OTTS_})
+
+ALL_SIG_DIRS:= $(foreach file,$(ALL_SIGS),$(dir $(file)))
+ALL_OTT_DIRS:= $(foreach file,$(ALL_OTTS),$(dir $(file)))
+
+OTT_OUTS   := $(addsuffix def_ott.v,${ALL_OTT_DIRS})
+LNGEN_OUTS := $(addsuffix prop_ln.v,${ALL_OTT_DIRS})
+AUTOSUBST2_OUTS := $(addsuffix def_as2.v,${ALL_SIG_DIRS}) $(addsuffix prop_as_unscoped.v,${ALL_SIG_DIRS}) $(addsuffix prop_as_core.v,${ALL_SIG_DIRS})
 
 ott: $(OTT_OUTS)
 lngen: ${LNGEN_OUTS}
 autosubst2: ${AUTOSUBST2_OUTS}
 
-%/autosubst2/def.v: %/autosubst2/language.sig
-	autosubst $*/autosubst2/language.sig -o $@ -s ucoq
+%/def_as2.v %/prop_as_core.v %/prop_as_unscoped.v: %/language.sig
+	autosubst $*/language.sig -o $@ -s ucoq
 	# rename files and modify imports
-	mv $*/autosubst2/core.v $*/autosubst2/prop_as_core.v
-	mv $*/autosubst2/unscoped.v $*/autosubst2/prop_as_unscoped.v
-	sed -e "s/Require Import core./Require Import $*.autosubst2.prop_as_core./g" ${SED_FLAG}  $*/autosubst2/prop_as_unscoped.v
-	sed -e "s/Require Import core unscoped./Require Import $*.autosubst2.prop_as_core $*.autosubst2.prop_as_unscoped./g" ${SED_FLAG} $*/autosubst2/def.v
+	mv $*/core.v $*/prop_as_core.v
+	mv $*/unscoped.v $*/prop_as_unscoped.v
+	sed -e "s/Require Import core./Require Import $(subst /,.,$*).prop_as_core./g" ${SED_FLAG}  $*/prop_as_unscoped.v
+	sed -e "s/Require Import core unscoped./Require Import $(subst /,.,$*).prop_as_core $(subst /,.,$*).prop_as_unscoped./g" ${SED_FLAG} $*/def_as2.v
 	# fix warning about % in Arguments in Coq 8.19
-	sed -e "/Arguments/ s/%/%_/g" ${SED_FLAG} $*/autosubst2/prop_as_unscoped.v
+	sed -e "/Arguments/ s/%/%_/g" ${SED_FLAG} $*/prop_as_unscoped.v
 	# modify constructor names, subst "var_*" intro "*_var" except "var_zero"
-	perl -i -pe 's/\bvar_((?!zero\b)[a-zA-Z0-9]+)/\1_var/g' $*/autosubst2/def.v
+	perl -i -pe 's/\bvar_((?!zero\b)[a-zA-Z0-9]+)/\1_var/g' $*/def_as2.v
 
-%/lngen/def.v: %/lngen/language.ott
+%/def_ott.v: %/language.ott
 	ott -i $^ -o $@ ${OTT_FLAGS}
 	sed -e "/Ott.ott_list_core/d" ${SED_FLAG} $@
 
-%/lngen/prop_ln.v: %/lngen/def.v
-	lngen-new --coq $@ --coq-ott .ott $*/lngen/language.ott
-	sed -e "s/Require Export .ott./Require Export $*.lngen.def./g" ${SED_FLAG} $@ 
+%/prop_ln.v: %/def_ott.v
+	lngen-new --coq $@ --coq-ott $(subst /,.,$*).def_ott $*/language.ott
+	# sed -e "s/Require Export .ott./Require Export $(subst /,.,$*).def_ott./g" ${SED_FLAG} $@ 
 
 # a hack to force makefile to detect source file changes
 .FILE_LIST : ${LNGEN_OUTS} FORCE
@@ -60,9 +70,10 @@ coq-only: $(COQ_MAKEFILE)
 	${MAKE} -f ${COQ_MAKEFILE}
 
 coq: $(COQ_MAKEFILE) lngen autosubst2
+	echo ${ALL_SIGS}
 	${MAKE} -f ${COQ_MAKEFILE}
 
 clean-coq-only: 
 	${MAKE} -f ${COQ_MAKEFILE} clean
 
-.phony: coq coq_only ott lngen
+.phony: coq coq_only ott lngen autosubst2
