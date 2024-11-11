@@ -14,7 +14,7 @@ else
 	SED_FLAG := -i
 endif
 
-SYSTEMS := systemf
+SYSTEMS := systemf stlc
 IGNORE_DIRS := "test"
 
 OTT_OUTS   := $(addsuffix /lngen/def.v,${SYSTEMS})
@@ -31,12 +31,11 @@ autosubst2: ${AUTOSUBST2_OUTS}
 	mv $*/autosubst2/core.v $*/autosubst2/prop_as_core.v
 	mv $*/autosubst2/unscoped.v $*/autosubst2/prop_as_unscoped.v
 	sed -e "s/Require Import core./Require Import $*.autosubst2.prop_as_core./g" ${SED_FLAG}  $*/autosubst2/prop_as_unscoped.v
-	sed -e "s/Require Import core unscoped./Require Import $*.autosubst2.prop_as_core binder.autosubst2.prop_as_unscoped./g" ${SED_FLAG} $*/autosubst2/def.v
+	sed -e "s/Require Import core unscoped./Require Import $*.autosubst2.prop_as_core $*.autosubst2.prop_as_unscoped./g" ${SED_FLAG} $*/autosubst2/def.v
 	# fix warning about % in Arguments in Coq 8.19
 	sed -e "/Arguments/ s/%/%_/g" ${SED_FLAG} $*/autosubst2/prop_as_unscoped.v
-	# modify constructor names
-	sed -e "s/var_ftyp/ftyp_var/g" ${SED_FLAG} $*/autosubst2/def.v 
-	sed -e "s/var_fexp/fexp_var/g" ${SED_FLAG} $*/autosubst2/def.v 
+	# modify constructor names, subst "var_*" intro "*_var" except "var_zero"
+	perl -i -pe 's/\bvar_((?!zero\b)[a-zA-Z0-9]+)/\1_var/g' $*/autosubst2/def.v
 
 %/lngen/def.v: %/lngen/language.ott
 	ott -i $^ -o $@ ${OTT_FLAGS}
