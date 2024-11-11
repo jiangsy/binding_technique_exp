@@ -28,7 +28,6 @@ Ltac inst_cofinite_impl_keep H x :=
           specialize (H x Fr) as H_1; generalize dependent H
   end.
 
-  
 Ltac inst_cofinites_with_keep x :=
   repeat
     match goal with
@@ -67,7 +66,6 @@ Ltac solve_notin_eq X :=
     assert (H: X `notin` singleton X) by auto;
     apply notin_singleton_1 in H; contradiction.
 
-  
 Ltac destruct_eq_atom :=
   unfold eq_dec in *;
   repeat

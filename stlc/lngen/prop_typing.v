@@ -1,10 +1,9 @@
-Require Import stlc.lngen.def_ott.
-Require Import stlc.lngen.prop_ln.
-Require Import stlc.lngen.def_extra.
-
 Require Import Coq.Program.Equality.
 Require Import Metalib.Metatheory.
 
+Require Import stlc.lngen.def_ott.
+Require Import stlc.lngen.prop_ln.
+Require Import stlc.lngen.def_extra.
 Require Import stlc.lngen.def_ltac.
 
 Hint Constructors typing : core.
@@ -81,4 +80,18 @@ Proof.
     simpl in H3. destruct_eq_atom. eauto.
     rewrite subst_exp_in_exp_fresh_eq in H3; eauto.
     eapply typing_lc; eauto.
+Qed.
+
+Theorem progress t A : 
+  nil ⊢ t : A ->
+  is_value t \/ exists t', t ⤳ t'.
+Proof.
+  intros H. dependent induction H; simpl; eauto.
+  - right. inversion H; subst.
+    + inversion H1. 
+    + eauto using step. 
+    + specialize (IHtyping1 (JMeq_refl _)).
+      destruct IHtyping1; eauto.
+      * inversion H3.
+      * destruct H3 as [t']. eauto using step.
 Qed.
