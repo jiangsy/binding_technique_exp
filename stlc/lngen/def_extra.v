@@ -13,7 +13,7 @@ Inductive typing : ctx -> exp -> typ -> Prop :=
   Γ ⊢ exp_unit : typ_unit
 | typing_abs : forall (L : atoms) (Γ : ctx) (A B : typ) (t : exp),
   (forall x, 
-    x `notin` L -> ((x , A) :: Γ) ⊢ t : B) ->
+    x `notin` L -> ((x , A) :: Γ) ⊢ open_exp_wrt_exp t (exp_var_f x) : B) ->
   Γ ⊢ (exp_abs t) : (typ_arr A B)
 | typing_app : forall (Γ : ctx) (s t : exp) (A B : typ),
   Γ ⊢ s : (typ_arr A B) ->
