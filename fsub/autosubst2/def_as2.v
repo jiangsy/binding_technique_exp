@@ -1,4 +1,4 @@
-Require Import systemf.autosubst2.prop_as_core systemf.autosubst2.prop_as_unscoped.
+Require Import fsub.autosubst2.prop_as_core fsub.autosubst2.prop_as_unscoped.
 
 Require Import Setoid Morphisms Relation_Definitions.
 
@@ -8,7 +8,7 @@ Module Core.
 Inductive typ : Type :=
   | typ_var : nat -> typ
   | typ_arr : typ -> typ -> typ
-  | typ_all : typ -> typ.
+  | typ_all : typ -> typ -> typ.
 
 Lemma congr_typ_arr {s0 : typ} {s1 : typ} {t0 : typ} {t1 : typ}
   (H0 : s0 = t0) (H1 : s1 = t1) : typ_arr s0 s1 = typ_arr t0 t1.
@@ -17,10 +17,11 @@ exact (eq_trans (eq_trans eq_refl (ap (fun x => typ_arr x s1) H0))
          (ap (fun x => typ_arr t0 x) H1)).
 Qed.
 
-Lemma congr_typ_all {s0 : typ} {t0 : typ} (H0 : s0 = t0) :
-  typ_all s0 = typ_all t0.
+Lemma congr_typ_all {s0 : typ} {s1 : typ} {t0 : typ} {t1 : typ}
+  (H0 : s0 = t0) (H1 : s1 = t1) : typ_all s0 s1 = typ_all t0 t1.
 Proof.
-exact (eq_trans eq_refl (ap (fun x => typ_all x) H0)).
+exact (eq_trans (eq_trans eq_refl (ap (fun x => typ_all x s1) H0))
+         (ap (fun x => typ_all t0 x) H1)).
 Qed.
 
 Lemma upRen_typ_typ (xi : nat -> nat) : nat -> nat.
@@ -32,7 +33,8 @@ Fixpoint ren_typ (xi_typ : nat -> nat) (s : typ) {struct s} : typ :=
   match s with
   | typ_var s0 => typ_var (xi_typ s0)
   | typ_arr s0 s1 => typ_arr (ren_typ xi_typ s0) (ren_typ xi_typ s1)
-  | typ_all s0 => typ_all (ren_typ (upRen_typ_typ xi_typ) s0)
+  | typ_all s0 s1 =>
+      typ_all (ren_typ xi_typ s0) (ren_typ (upRen_typ_typ xi_typ) s1)
   end.
 
 Lemma up_typ_typ (sigma : nat -> typ) : nat -> typ.
@@ -45,7 +47,8 @@ Fixpoint subst_typ (sigma_typ : nat -> typ) (s : typ) {struct s} : typ :=
   | typ_var s0 => sigma_typ s0
   | typ_arr s0 s1 =>
       typ_arr (subst_typ sigma_typ s0) (subst_typ sigma_typ s1)
-  | typ_all s0 => typ_all (subst_typ (up_typ_typ sigma_typ) s0)
+  | typ_all s0 s1 =>
+      typ_all (subst_typ sigma_typ s0) (subst_typ (up_typ_typ sigma_typ) s1)
   end.
 
 Lemma upId_typ_typ (sigma : nat -> typ) (Eq : forall x, sigma x = typ_var x)
@@ -66,9 +69,9 @@ subst_typ sigma_typ s = s :=
   | typ_arr s0 s1 =>
       congr_typ_arr (idSubst_typ sigma_typ Eq_typ s0)
         (idSubst_typ sigma_typ Eq_typ s1)
-  | typ_all s0 =>
-      congr_typ_all
-        (idSubst_typ (up_typ_typ sigma_typ) (upId_typ_typ _ Eq_typ) s0)
+  | typ_all s0 s1 =>
+      congr_typ_all (idSubst_typ sigma_typ Eq_typ s0)
+        (idSubst_typ (up_typ_typ sigma_typ) (upId_typ_typ _ Eq_typ) s1)
   end.
 
 Lemma upExtRen_typ_typ (xi : nat -> nat) (zeta : nat -> nat)
@@ -89,10 +92,10 @@ ren_typ xi_typ s = ren_typ zeta_typ s :=
   | typ_arr s0 s1 =>
       congr_typ_arr (extRen_typ xi_typ zeta_typ Eq_typ s0)
         (extRen_typ xi_typ zeta_typ Eq_typ s1)
-  | typ_all s0 =>
-      congr_typ_all
+  | typ_all s0 s1 =>
+      congr_typ_all (extRen_typ xi_typ zeta_typ Eq_typ s0)
         (extRen_typ (upRen_typ_typ xi_typ) (upRen_typ_typ zeta_typ)
-           (upExtRen_typ_typ _ _ Eq_typ) s0)
+           (upExtRen_typ_typ _ _ Eq_typ) s1)
   end.
 
 Lemma upExt_typ_typ (sigma : nat -> typ) (tau : nat -> typ)
@@ -114,10 +117,10 @@ subst_typ sigma_typ s = subst_typ tau_typ s :=
   | typ_arr s0 s1 =>
       congr_typ_arr (ext_typ sigma_typ tau_typ Eq_typ s0)
         (ext_typ sigma_typ tau_typ Eq_typ s1)
-  | typ_all s0 =>
-      congr_typ_all
+  | typ_all s0 s1 =>
+      congr_typ_all (ext_typ sigma_typ tau_typ Eq_typ s0)
         (ext_typ (up_typ_typ sigma_typ) (up_typ_typ tau_typ)
-           (upExt_typ_typ _ _ Eq_typ) s0)
+           (upExt_typ_typ _ _ Eq_typ) s1)
   end.
 
 Lemma up_ren_ren_typ_typ (xi : nat -> nat) (zeta : nat -> nat)
@@ -137,10 +140,10 @@ Fixpoint compRenRen_typ (xi_typ : nat -> nat) (zeta_typ : nat -> nat)
   | typ_arr s0 s1 =>
       congr_typ_arr (compRenRen_typ xi_typ zeta_typ rho_typ Eq_typ s0)
         (compRenRen_typ xi_typ zeta_typ rho_typ Eq_typ s1)
-  | typ_all s0 =>
-      congr_typ_all
+  | typ_all s0 s1 =>
+      congr_typ_all (compRenRen_typ xi_typ zeta_typ rho_typ Eq_typ s0)
         (compRenRen_typ (upRen_typ_typ xi_typ) (upRen_typ_typ zeta_typ)
-           (upRen_typ_typ rho_typ) (up_ren_ren _ _ _ Eq_typ) s0)
+           (upRen_typ_typ rho_typ) (up_ren_ren _ _ _ Eq_typ) s1)
   end.
 
 Lemma up_ren_subst_typ_typ (xi : nat -> nat) (tau : nat -> typ)
@@ -164,10 +167,10 @@ Fixpoint compRenSubst_typ (xi_typ : nat -> nat) (tau_typ : nat -> typ)
   | typ_arr s0 s1 =>
       congr_typ_arr (compRenSubst_typ xi_typ tau_typ theta_typ Eq_typ s0)
         (compRenSubst_typ xi_typ tau_typ theta_typ Eq_typ s1)
-  | typ_all s0 =>
-      congr_typ_all
+  | typ_all s0 s1 =>
+      congr_typ_all (compRenSubst_typ xi_typ tau_typ theta_typ Eq_typ s0)
         (compRenSubst_typ (upRen_typ_typ xi_typ) (up_typ_typ tau_typ)
-           (up_typ_typ theta_typ) (up_ren_subst_typ_typ _ _ _ Eq_typ) s0)
+           (up_typ_typ theta_typ) (up_ren_subst_typ_typ _ _ _ Eq_typ) s1)
   end.
 
 Lemma up_subst_ren_typ_typ (sigma : nat -> typ) (zeta_typ : nat -> nat)
@@ -202,10 +205,10 @@ ren_typ zeta_typ (subst_typ sigma_typ s) = subst_typ theta_typ s :=
   | typ_arr s0 s1 =>
       congr_typ_arr (compSubstRen_typ sigma_typ zeta_typ theta_typ Eq_typ s0)
         (compSubstRen_typ sigma_typ zeta_typ theta_typ Eq_typ s1)
-  | typ_all s0 =>
-      congr_typ_all
+  | typ_all s0 s1 =>
+      congr_typ_all (compSubstRen_typ sigma_typ zeta_typ theta_typ Eq_typ s0)
         (compSubstRen_typ (up_typ_typ sigma_typ) (upRen_typ_typ zeta_typ)
-           (up_typ_typ theta_typ) (up_subst_ren_typ_typ _ _ _ Eq_typ) s0)
+           (up_typ_typ theta_typ) (up_subst_ren_typ_typ _ _ _ Eq_typ) s1)
   end.
 
 Lemma up_subst_subst_typ_typ (sigma : nat -> typ) (tau_typ : nat -> typ)
@@ -242,10 +245,11 @@ subst_typ tau_typ (subst_typ sigma_typ s) = subst_typ theta_typ s :=
       congr_typ_arr
         (compSubstSubst_typ sigma_typ tau_typ theta_typ Eq_typ s0)
         (compSubstSubst_typ sigma_typ tau_typ theta_typ Eq_typ s1)
-  | typ_all s0 =>
+  | typ_all s0 s1 =>
       congr_typ_all
+        (compSubstSubst_typ sigma_typ tau_typ theta_typ Eq_typ s0)
         (compSubstSubst_typ (up_typ_typ sigma_typ) (up_typ_typ tau_typ)
-           (up_typ_typ theta_typ) (up_subst_subst_typ_typ _ _ _ Eq_typ) s0)
+           (up_typ_typ theta_typ) (up_subst_subst_typ_typ _ _ _ Eq_typ) s1)
   end.
 
 Lemma renRen_typ (xi_typ : nat -> nat) (zeta_typ : nat -> nat) (s : typ) :
@@ -325,10 +329,10 @@ Fixpoint rinst_inst_typ (xi_typ : nat -> nat) (sigma_typ : nat -> typ)
   | typ_arr s0 s1 =>
       congr_typ_arr (rinst_inst_typ xi_typ sigma_typ Eq_typ s0)
         (rinst_inst_typ xi_typ sigma_typ Eq_typ s1)
-  | typ_all s0 =>
-      congr_typ_all
+  | typ_all s0 s1 =>
+      congr_typ_all (rinst_inst_typ xi_typ sigma_typ Eq_typ s0)
         (rinst_inst_typ (upRen_typ_typ xi_typ) (up_typ_typ sigma_typ)
-           (rinstInst_up_typ_typ _ _ Eq_typ) s0)
+           (rinstInst_up_typ_typ _ _ Eq_typ) s1)
   end.
 
 Lemma rinstInst'_typ (xi_typ : nat -> nat) (s : typ) :
@@ -389,6 +393,86 @@ Lemma varLRen'_typ_pointwise (xi_typ : nat -> nat) :
     (funcomp (typ_var) xi_typ).
 Proof.
 exact (fun x => eq_refl).
+Qed.
+
+Inductive entry : Type :=
+  | entry_var : typ -> entry
+  | entry_tvar : typ -> entry.
+
+Lemma congr_entry_var {s0 : typ} {t0 : typ} (H0 : s0 = t0) :
+  entry_var s0 = entry_var t0.
+Proof.
+exact (eq_trans eq_refl (ap (fun x => entry_var x) H0)).
+Qed.
+
+Lemma congr_entry_tvar {s0 : typ} {t0 : typ} (H0 : s0 = t0) :
+  entry_tvar s0 = entry_tvar t0.
+Proof.
+exact (eq_trans eq_refl (ap (fun x => entry_tvar x) H0)).
+Qed.
+
+Definition subst_entry (sigma_typ : nat -> typ) (s : entry) : entry :=
+  match s with
+  | entry_var s0 => entry_var (subst_typ sigma_typ s0)
+  | entry_tvar s0 => entry_tvar (subst_typ sigma_typ s0)
+  end.
+
+Definition idSubst_entry (sigma_typ : nat -> typ)
+  (Eq_typ : forall x, sigma_typ x = typ_var x) (s : entry) :
+  subst_entry sigma_typ s = s :=
+  match s with
+  | entry_var s0 => congr_entry_var (idSubst_typ sigma_typ Eq_typ s0)
+  | entry_tvar s0 => congr_entry_tvar (idSubst_typ sigma_typ Eq_typ s0)
+  end.
+
+Definition ext_entry (sigma_typ : nat -> typ) (tau_typ : nat -> typ)
+  (Eq_typ : forall x, sigma_typ x = tau_typ x) (s : entry) :
+  subst_entry sigma_typ s = subst_entry tau_typ s :=
+  match s with
+  | entry_var s0 => congr_entry_var (ext_typ sigma_typ tau_typ Eq_typ s0)
+  | entry_tvar s0 => congr_entry_tvar (ext_typ sigma_typ tau_typ Eq_typ s0)
+  end.
+
+Definition compSubstSubst_entry (sigma_typ : nat -> typ)
+  (tau_typ : nat -> typ) (theta_typ : nat -> typ)
+  (Eq_typ : forall x, funcomp (subst_typ tau_typ) sigma_typ x = theta_typ x)
+  (s : entry) :
+  subst_entry tau_typ (subst_entry sigma_typ s) = subst_entry theta_typ s :=
+  match s with
+  | entry_var s0 =>
+      congr_entry_var
+        (compSubstSubst_typ sigma_typ tau_typ theta_typ Eq_typ s0)
+  | entry_tvar s0 =>
+      congr_entry_tvar
+        (compSubstSubst_typ sigma_typ tau_typ theta_typ Eq_typ s0)
+  end.
+
+Lemma substSubst_entry (sigma_typ : nat -> typ) (tau_typ : nat -> typ)
+  (s : entry) :
+  subst_entry tau_typ (subst_entry sigma_typ s) =
+  subst_entry (funcomp (subst_typ tau_typ) sigma_typ) s.
+Proof.
+exact (compSubstSubst_entry sigma_typ tau_typ _ (fun n => eq_refl) s).
+Qed.
+
+Lemma substSubst_entry_pointwise (sigma_typ : nat -> typ)
+  (tau_typ : nat -> typ) :
+  pointwise_relation _ eq
+    (funcomp (subst_entry tau_typ) (subst_entry sigma_typ))
+    (subst_entry (funcomp (subst_typ tau_typ) sigma_typ)).
+Proof.
+exact (fun s => compSubstSubst_entry sigma_typ tau_typ _ (fun n => eq_refl) s).
+Qed.
+
+Lemma instId'_entry (s : entry) : subst_entry (typ_var) s = s.
+Proof.
+exact (idSubst_entry (typ_var) (fun n => eq_refl) s).
+Qed.
+
+Lemma instId'_entry_pointwise :
+  pointwise_relation _ eq (subst_entry (typ_var)) id.
+Proof.
+exact (fun s => idSubst_entry (typ_var) (fun n => eq_refl) s).
 Qed.
 
 Inductive exp : Type :=
@@ -1166,6 +1250,9 @@ Qed.
 Class Up_exp X Y :=
     up_exp : X -> Y.
 
+Class Up_entry X Y :=
+    up_entry : X -> Y.
+
 Class Up_typ X Y :=
     up_typ : X -> Y.
 
@@ -1180,6 +1267,8 @@ Class Up_typ X Y :=
 #[global]Instance Ren_exp : (Ren2 _ _ _ _) := @ren_exp.
 
 #[global]Instance VarInstance_exp : (Var _ _) := @exp_var.
+
+#[global]Instance Subst_entry : (Subst1 _ _ _) := @subst_entry.
 
 #[global]Instance Subst_typ : (Subst1 _ _ _) := @subst_typ.
 
@@ -1217,6 +1306,14 @@ Notation "x '__exp'" := (@ids _ _ VarInstance_exp x)
 
 Notation "x '__exp'" := (exp_var x) ( at level 5, format "x __exp")  :
 subst_scope.
+
+Notation "[ sigma_typ ]" := (subst_entry sigma_typ)
+( at level 1, left associativity, only printing)  : fscope.
+
+Notation "s [ sigma_typ ]" := (subst_entry sigma_typ s)
+( at level 7, left associativity, only printing)  : subst_scope.
+
+Notation "↑__entry" := up_entry (only printing)  : subst_scope.
 
 Notation "[ sigma_typ ]" := (subst_typ sigma_typ)
 ( at level 1, left associativity, only printing)  : fscope.
@@ -1289,6 +1386,24 @@ exact (fun f_typ g_typ Eq_typ f_exp g_exp Eq_exp s =>
 Qed.
 
 #[global]
+Instance subst_entry_morphism :
+ (Proper (respectful (pointwise_relation _ eq) (respectful eq eq))
+    (@subst_entry)).
+Proof.
+exact (fun f_typ g_typ Eq_typ s t Eq_st =>
+       eq_ind s (fun t' => subst_entry f_typ s = subst_entry g_typ t')
+         (ext_entry f_typ g_typ Eq_typ s) t Eq_st).
+Qed.
+
+#[global]
+Instance subst_entry_morphism2 :
+ (Proper (respectful (pointwise_relation _ eq) (pointwise_relation _ eq))
+    (@subst_entry)).
+Proof.
+exact (fun f_typ g_typ Eq_typ s => ext_entry f_typ g_typ Eq_typ s).
+Qed.
+
+#[global]
 Instance subst_typ_morphism :
  (Proper (respectful (pointwise_relation _ eq) (respectful eq eq))
     (@subst_typ)).
@@ -1326,14 +1441,16 @@ Qed.
 Ltac auto_unfold := repeat
                      unfold VarInstance_typ, Var, ids, Ren_typ, Ren1, ren1,
                       Up_typ_typ, Up_typ, up_typ, Subst_typ, Subst1, subst1,
-                      VarInstance_exp, Var, ids, Ren_exp, Ren2, ren2,
-                      Up_typ_exp, Up_exp, up_exp, Up_exp_typ, Up_typ, up_typ,
-                      Up_exp_exp, Up_exp, up_exp, Subst_exp, Subst2, subst2.
+                      Subst_entry, Subst1, subst1, VarInstance_exp, Var, ids,
+                      Ren_exp, Ren2, ren2, Up_typ_exp, Up_exp, up_exp,
+                      Up_exp_typ, Up_typ, up_typ, Up_exp_exp, Up_exp, up_exp,
+                      Subst_exp, Subst2, subst2.
 
 Tactic Notation "auto_unfold" "in" "*" := repeat
                                            unfold VarInstance_typ, Var, ids,
                                             Ren_typ, Ren1, ren1, Up_typ_typ,
                                             Up_typ, up_typ, Subst_typ,
+                                            Subst1, subst1, Subst_entry,
                                             Subst1, subst1, VarInstance_exp,
                                             Var, ids, Ren_exp, Ren2, ren2,
                                             Up_typ_exp, Up_exp, up_exp,
@@ -1351,6 +1468,8 @@ Ltac asimpl' := repeat (first
                  | progress setoid_rewrite renSubst_exp
                  | progress setoid_rewrite renRen'_exp_pointwise
                  | progress setoid_rewrite renRen_exp
+                 | progress setoid_rewrite substSubst_entry_pointwise
+                 | progress setoid_rewrite substSubst_entry
                  | progress setoid_rewrite substSubst_typ_pointwise
                  | progress setoid_rewrite substSubst_typ
                  | progress setoid_rewrite substRen_typ_pointwise
@@ -1367,6 +1486,8 @@ Ltac asimpl' := repeat (first
                  | progress setoid_rewrite rinstId'_exp
                  | progress setoid_rewrite instId'_exp_pointwise
                  | progress setoid_rewrite instId'_exp
+                 | progress setoid_rewrite instId'_entry_pointwise
+                 | progress setoid_rewrite instId'_entry
                  | progress setoid_rewrite varLRen'_typ_pointwise
                  | progress setoid_rewrite varLRen'_typ
                  | progress setoid_rewrite varL'_typ_pointwise
@@ -1379,17 +1500,18 @@ Ltac asimpl' := repeat (first
                     unfold up_exp_exp, up_exp_typ, up_typ_exp, upRen_exp_exp,
                      upRen_exp_typ, upRen_typ_exp, up_typ_typ, upRen_typ_typ,
                      up_ren
-                 | progress cbn[subst_exp ren_exp subst_typ ren_typ]
+                 | progress
+                    cbn[subst_exp ren_exp subst_entry subst_typ ren_typ]
                  | progress fsimpl ]).
 
 Ltac asimpl := check_no_evars;
                 repeat
                  unfold VarInstance_typ, Var, ids, Ren_typ, Ren1, ren1,
                   Up_typ_typ, Up_typ, up_typ, Subst_typ, Subst1, subst1,
-                  VarInstance_exp, Var, ids, Ren_exp, Ren2, ren2, Up_typ_exp,
-                  Up_exp, up_exp, Up_exp_typ, Up_typ, up_typ, Up_exp_exp,
-                  Up_exp, up_exp, Subst_exp, Subst2, subst2 in *; asimpl';
-                minimize.
+                  Subst_entry, Subst1, subst1, VarInstance_exp, Var, ids,
+                  Ren_exp, Ren2, ren2, Up_typ_exp, Up_exp, up_exp,
+                  Up_exp_typ, Up_typ, up_typ, Up_exp_exp, Up_exp, up_exp,
+                  Subst_exp, Subst2, subst2 in *; asimpl'; minimize.
 
 Tactic Notation "asimpl" "in" hyp(J) := revert J; asimpl; intros J.
 
@@ -1415,6 +1537,8 @@ Import Core.
 #[global]Hint Opaque subst_exp: rewrite.
 
 #[global]Hint Opaque ren_exp: rewrite.
+
+#[global]Hint Opaque subst_entry: rewrite.
 
 #[global]Hint Opaque subst_typ: rewrite.
 

@@ -1,11 +1,11 @@
 Require Import Coq.Program.Equality.
 Require Import List.
 
-Require Import systemf.autosubst2.def.
+Require Import systemf.autosubst2.def_as2.
 Require Import systemf.autosubst2.prop_as_core.
 Require Import systemf.autosubst2.prop_as_unscoped.
 
-Definition ctx := list ftyp.
+Definition ctx := list typ.
 
 Definition lookup_fun {T} n (Δ : list T) :=
   nth_error Δ n.
@@ -26,32 +26,29 @@ Proof.
   intros. induction H; inversion H0; eauto.
 Qed.
 
-Derive Inversion lookup_inv 
-  with (forall {U} i (Γ : list U) A, lookup i Γ A) Sort Prop.
-
 Import SubstNotations.
 Import UnscopedNotations.
 
 Reserved Notation "Γ ⊢ t : A" 
   (at level 50, t at next level, no associativity).
-Inductive typing : ctx -> fexp -> ftyp -> Prop :=
-| typing_var : forall (Γ : ctx) (i : nat) (A : ftyp),
+Inductive typing : ctx -> exp -> typ -> Prop :=
+| typing_var : forall (Γ : ctx) (i : nat) (A : typ),
   lookup i Γ A ->
-  Γ ⊢ (fexp_var i) : A
-| typing_abs : forall (Γ : ctx) (A B : ftyp) (t : fexp),
+  Γ ⊢ (exp_var i) : A
+| typing_abs : forall (Γ : ctx) (A B : typ) (t : exp),
   (A :: Γ) ⊢ t : B ->
-  Γ ⊢ (fexp_abs A t) : (ftyp_arr A B)
-| typing_app : forall (Γ : ctx) (s t : fexp) (A B : ftyp),
-  Γ ⊢ s : (ftyp_arr A B) ->
+  Γ ⊢ (exp_abs A t) : (typ_arr A B)
+| typing_app : forall (Γ : ctx) (s t : exp) (A B : typ),
+  Γ ⊢ s : (typ_arr A B) ->
   Γ ⊢ t : A ->
-  Γ ⊢ (fexp_app s t) : B
-| typing_tabs : forall (Γ : ctx) (t : fexp) (A : ftyp),
-  (map (ren_ftyp ↑) Γ) ⊢ t : A ->
-  Γ ⊢ (fexp_tabs t) : (ftyp_all A)
-| typing_tapp : forall (Γ : ctx) (t : fexp) (A B A' : ftyp),
-  Γ ⊢ t : (ftyp_all A) ->
+  Γ ⊢ (exp_app s t) : B
+| typing_tabs : forall (Γ : ctx) (t : exp) (A : typ),
+  (map (ren_typ ↑) Γ) ⊢ t : A ->
+  Γ ⊢ (exp_tabs t) : (typ_all A)
+| typing_tapp : forall (Γ : ctx) (t : exp) (A B A' : typ),
+  Γ ⊢ t : (typ_all A) ->
   A' = A [B..] ->
-  Γ ⊢ fexp_tapp t B : A'
+  Γ ⊢ exp_tapp t B : A'
 where "Γ ⊢ t : A" := (typing Γ t A).
 
 Definition ctx_var_rename {T} ζ Γ Δ :=
@@ -91,13 +88,13 @@ Theorem typing_rename Γ t A :
   Γ ⊢ t : A ->
   forall Δ ξ ζ,
     ctx_var_rename ζ Γ Δ ->
-    (map (ren_ftyp ξ) Δ) ⊢ t ⟨ξ;ζ⟩ : A ⟨ξ⟩.
+    (map (ren_typ ξ) Δ) ⊢ t ⟨ξ;ζ⟩ : A ⟨ξ⟩.
 Proof.
   intros H. induction H; intros; asimpl.
   - eapply typing_var.
     eapply lookup_map; eauto.
   - eapply typing_abs.
-    replace ((ren_ftyp ξ A) :: (list_map (ren_ftyp ξ) Δ)) with (map (ren_ftyp ξ) (A :: Δ)) by auto.
+    replace ((ren_typ ξ A) :: (list_map (ren_typ ξ) Δ)) with (map (ren_typ ξ) (A :: Δ)) by auto.
     eapply IHtyping; eauto.
     unfold ctx_var_rename; intros.
     inversion H1; subst; eauto.
@@ -105,7 +102,7 @@ Proof.
     eapply H0; eauto.
   - eapply typing_app; eauto. 
   - eapply typing_tabs; asimpl; eauto.
-    apply ctx_var_rename_map with (f := ren_ftyp ↑) in H0.
+    apply ctx_var_rename_map with (f := ren_typ ↑) in H0.
     eapply IHtyping with (ξ := 0 .: ξ >> S) in H0; eauto.
     erewrite list_comp; eauto.
     erewrite list_comp in H0; eauto.
@@ -118,7 +115,7 @@ Proof.
 Qed.
 
 Lemma ctx_map_id : forall Γ,
-  map (ren_ftyp id) Γ = Γ.
+  map (ren_typ id) Γ = Γ.
 Proof.
   intros. induction Γ; simpl; eauto.
   rewrite <- IHΓ at 2; asimpl; eauto.
@@ -147,7 +144,7 @@ Proof.
   intros H. induction H; asimpl; intros.
   - eauto.
   - eapply typing_abs.
-    assert (ctx_var_subst (A :: Γ) (A [ρ] :: Δ) ((up_fexp_fexp τ)) (ρ)).
+    assert (ctx_var_subst (A :: Γ) (A [ρ] :: Δ) ((up_exp_exp τ)) (ρ)).
     + unfold ctx_var_subst in *. intros.
       inversion H1; subst; asimpl; eauto.
       * econstructor; eauto.
@@ -162,10 +159,9 @@ Proof.
     eapply typing_rename with (ξ:=↑) (ζ:=id) (Δ:=Δ) in Hl.
     + asimpl in Hl. asimpl. auto.
     + eapply ctx_var_rename_refl; eauto. 
-  - eapply typing_tapp with (A := subst_ftyp (up_ftyp_ftyp ρ) A); eauto.
+  - eapply typing_tapp with (A := subst_typ (up_typ_typ ρ) A); eauto.
     + rewrite H0. asimpl. auto.
 Qed.
 
 (* see also *)
 (* https://github.com/qcfu-bu/TYDE23/blob/50bd676e830e76beae7809a67ddcd19bc4e903b2/coq/theories/clc_substitution.v#L703 *)
-(* https://github.com/yiyunliu/autosubst-stlc/blob/master/typing.v *)

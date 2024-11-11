@@ -4,21 +4,25 @@ metavar expvar, x, y, z ::= {{ repr-locally-nameless }}
 grammar
 
 typ, A, B, C :: typ_ ::=
-  | X              ::   :: var
-  | A1 -> A2       ::   :: arr
-  | ∀ X . A        ::   :: all  (+ bind X in A +)
-  | ( A )          :: S :: paren {{ coq ([[A]]) }}
-  | { A2 / X } A1  :: M :: subst {{ coq (open_typ_wrt_typ [[X A1]] [[A2]]) }}
+  | X                ::   :: var
+  | A1 -> A2         ::   :: arr
+  | ∀ ( X < B ) . A  ::   :: all  (+ bind X in A +)
+  | ( A )            :: S :: paren {{ coq ([[A]]) }}
+  | { A2 / X } A1    :: M :: subst {{ coq (open_typ_wrt_typ [[X A1]] [[A2]]) }}
 
 exp, e, f, g :: exp_ ::=
   | x                                   ::   :: var
   | \ x : A . e                         ::   :: abs  (+ bind x in e +)
   | e1 e2                               ::   :: app
-  | \ X . e                             ::   :: tabs (+ bind X in e +)
+  | \ ( X < A )  . e                    ::   :: tabs (+ bind X in e +)
   | e @ A                               ::   :: tapp
   | ( e )                               :: S :: paren  {{ coq ([[e]]) }}
   | { e2 / x } e1                       :: M :: subst1 {{ coq (open_exp_wrt_exp [[x e1]] [[e2]]) }}
   | { A2 / X } e1                       :: M :: subst2 {{ coq (open_exp_wrt_typ [[X e1]] [[A2]]) }}
+
+entry, et  :: entry_ ::=
+  | <: T :: :: tvar
+  | : T  :: :: var
 
 substitutions
   single A X :: subst_typ_in

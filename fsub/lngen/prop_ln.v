@@ -5,7 +5,7 @@ Require Import Coq.Program.Equality.
 Require Export Metalib.Metatheory.
 Require Export Metalib.LibLNgen.
 
-Require Export systemf.lngen.def_ott.
+Require Export fsub.lngen.def_ott.
 
 Local Set Warnings "-non-recursive". 
 
@@ -33,6 +33,14 @@ Scheme exp_rec' := Induction for exp Sort Set.
 
 Combined Scheme exp_mutrec from exp_rec'.
 
+Scheme entry_ind' := Induction for entry Sort Prop.
+
+Combined Scheme entry_mutind from entry_ind'.
+
+Scheme entry_rec' := Induction for entry Sort Set.
+
+Combined Scheme entry_mutrec from entry_rec'.
+
 
 (* *********************************************************************** *)
 (** * Close *)
@@ -42,7 +50,7 @@ Fixpoint close_typ_wrt_typ_rec (n1 : nat) (X1 : typvar) (A1 : typ) {struct A1} :
     | typ_var_f X2 => if (X1 == X2) then (typ_var_b n1) else (typ_var_f X2)
     | typ_var_b n2 => if (lt_ge_dec n2 n1) then (typ_var_b n2) else (typ_var_b (S n2))
     | typ_arr A2 A3 => typ_arr (close_typ_wrt_typ_rec n1 X1 A2) (close_typ_wrt_typ_rec n1 X1 A3)
-    | typ_all A2 => typ_all (close_typ_wrt_typ_rec (S n1) X1 A2)
+    | typ_all B1 A2 => typ_all (close_typ_wrt_typ_rec n1 X1 B1) (close_typ_wrt_typ_rec (S n1) X1 A2)
   end.
 
 Definition close_typ_wrt_typ X1 A1 := close_typ_wrt_typ_rec 0 X1 A1.
@@ -53,7 +61,7 @@ Fixpoint close_exp_wrt_typ_rec (n1 : nat) (X1 : typvar) (e1 : exp) {struct e1} :
     | exp_var_b n2 => exp_var_b n2
     | exp_abs A1 e2 => exp_abs (close_typ_wrt_typ_rec n1 X1 A1) (close_exp_wrt_typ_rec n1 X1 e2)
     | exp_app e2 e3 => exp_app (close_exp_wrt_typ_rec n1 X1 e2) (close_exp_wrt_typ_rec n1 X1 e3)
-    | exp_tabs e2 => exp_tabs (close_exp_wrt_typ_rec (S n1) X1 e2)
+    | exp_tabs A1 e2 => exp_tabs (close_typ_wrt_typ_rec n1 X1 A1) (close_exp_wrt_typ_rec (S n1) X1 e2)
     | exp_tapp e2 A1 => exp_tapp (close_exp_wrt_typ_rec n1 X1 e2) (close_typ_wrt_typ_rec n1 X1 A1)
   end.
 
@@ -63,7 +71,7 @@ Fixpoint close_exp_wrt_exp_rec (n1 : nat) (x1 : expvar) (e1 : exp) {struct e1} :
     | exp_var_b n2 => if (lt_ge_dec n2 n1) then (exp_var_b n2) else (exp_var_b (S n2))
     | exp_abs A1 e2 => exp_abs A1 (close_exp_wrt_exp_rec (S n1) x1 e2)
     | exp_app e2 e3 => exp_app (close_exp_wrt_exp_rec n1 x1 e2) (close_exp_wrt_exp_rec n1 x1 e3)
-    | exp_tabs e2 => exp_tabs (close_exp_wrt_exp_rec n1 x1 e2)
+    | exp_tabs A1 e2 => exp_tabs A1 (close_exp_wrt_exp_rec n1 x1 e2)
     | exp_tapp e2 A1 => exp_tapp (close_exp_wrt_exp_rec n1 x1 e2) A1
   end.
 
@@ -80,7 +88,7 @@ Fixpoint size_typ (A1 : typ) {struct A1} : nat :=
     | typ_var_f X1 => 1
     | typ_var_b n1 => 1
     | typ_arr A2 A3 => 1 + (size_typ A2) + (size_typ A3)
-    | typ_all A2 => 1 + (size_typ A2)
+    | typ_all B1 A2 => 1 + (size_typ B1) + (size_typ A2)
   end.
 
 Fixpoint size_exp (e1 : exp) {struct e1} : nat :=
@@ -89,8 +97,14 @@ Fixpoint size_exp (e1 : exp) {struct e1} : nat :=
     | exp_var_b n1 => 1
     | exp_abs A1 e2 => 1 + (size_typ A1) + (size_exp e2)
     | exp_app e2 e3 => 1 + (size_exp e2) + (size_exp e3)
-    | exp_tabs e2 => 1 + (size_exp e2)
+    | exp_tabs A1 e2 => 1 + (size_typ A1) + (size_exp e2)
     | exp_tapp e2 A1 => 1 + (size_exp e2) + (size_typ A1)
+  end.
+
+Fixpoint size_entry (et1 : entry) {struct et1} : nat :=
+  match et1 with
+    | entry_tvar => 1
+    | entry_var => 1
   end.
 
 
@@ -109,9 +123,10 @@ Inductive degree_typ_wrt_typ : nat -> typ -> Prop :=
     degree_typ_wrt_typ n1 A1 ->
     degree_typ_wrt_typ n1 A2 ->
     degree_typ_wrt_typ n1 (typ_arr A1 A2)
-  | degree_wrt_typ_typ_all : forall n1 A1,
+  | degree_wrt_typ_typ_all : forall n1 B1 A1,
+    degree_typ_wrt_typ n1 B1 ->
     degree_typ_wrt_typ (S n1) A1 ->
-    degree_typ_wrt_typ n1 (typ_all A1).
+    degree_typ_wrt_typ n1 (typ_all B1 A1).
 
 Scheme degree_typ_wrt_typ_ind' := Induction for degree_typ_wrt_typ Sort Prop.
 
@@ -132,9 +147,10 @@ Inductive degree_exp_wrt_typ : nat -> exp -> Prop :=
     degree_exp_wrt_typ n1 e1 ->
     degree_exp_wrt_typ n1 e2 ->
     degree_exp_wrt_typ n1 (exp_app e1 e2)
-  | degree_wrt_typ_exp_tabs : forall n1 e1,
+  | degree_wrt_typ_exp_tabs : forall n1 A1 e1,
+    degree_typ_wrt_typ n1 A1 ->
     degree_exp_wrt_typ (S n1) e1 ->
-    degree_exp_wrt_typ n1 (exp_tabs e1)
+    degree_exp_wrt_typ n1 (exp_tabs A1 e1)
   | degree_wrt_typ_exp_tapp : forall n1 e1 A1,
     degree_exp_wrt_typ n1 e1 ->
     degree_typ_wrt_typ n1 A1 ->
@@ -153,9 +169,9 @@ Inductive degree_exp_wrt_exp : nat -> exp -> Prop :=
     degree_exp_wrt_exp n1 e1 ->
     degree_exp_wrt_exp n1 e2 ->
     degree_exp_wrt_exp n1 (exp_app e1 e2)
-  | degree_wrt_exp_exp_tabs : forall n1 e1,
+  | degree_wrt_exp_exp_tabs : forall n1 A1 e1,
     degree_exp_wrt_exp n1 e1 ->
-    degree_exp_wrt_exp n1 (exp_tabs e1)
+    degree_exp_wrt_exp n1 (exp_tabs A1 e1)
   | degree_wrt_exp_exp_tapp : forall n1 e1 A1,
     degree_exp_wrt_exp n1 e1 ->
     degree_exp_wrt_exp n1 (exp_tapp e1 A1).
@@ -183,9 +199,10 @@ Inductive lc_set_typ : typ -> Set :=
     lc_set_typ A1 ->
     lc_set_typ A2 ->
     lc_set_typ (typ_arr A1 A2)
-  | lc_set_typ_all : forall A1,
+  | lc_set_typ_all : forall B1 A1,
+    lc_set_typ B1 ->
     (forall X1 : typvar, lc_set_typ (open_typ_wrt_typ A1 (typ_var_f X1))) ->
-    lc_set_typ (typ_all A1).
+    lc_set_typ (typ_all B1 A1).
 Scheme lc_typ_ind' := Induction for lc_typ Sort Prop.
 
 Combined Scheme lc_typ_mutind from lc_typ_ind'.
@@ -213,9 +230,10 @@ Inductive lc_set_exp : exp -> Set :=
     lc_set_exp e1 ->
     lc_set_exp e2 ->
     lc_set_exp (exp_app e1 e2)
-  | lc_set_exp_tabs : forall e1,
+  | lc_set_exp_tabs : forall A1 e1,
+    lc_set_typ A1 ->
     (forall X1 : typvar, lc_set_exp (open_exp_wrt_typ e1 (typ_var_f X1))) ->
-    lc_set_exp (exp_tabs e1)
+    lc_set_exp (exp_tabs A1 e1)
   | lc_set_exp_tapp : forall e1 A1,
     lc_set_exp e1 ->
     lc_set_typ A1 ->
@@ -313,6 +331,25 @@ pose proof size_exp_min_mutual as H; intuition eauto.
 Qed.
 
 #[export] Hint Resolve size_exp_min : lngen.
+
+(* begin hide *)
+
+Lemma size_entry_min_mutual :
+(forall et1, 1 <= size_entry et1).
+Proof.
+apply_mutual_ind entry_mutind;
+default_simp.
+Qed.
+
+(* end hide *)
+
+Lemma size_entry_min :
+forall et1, 1 <= size_entry et1.
+Proof.
+pose proof size_entry_min_mutual as H; intuition eauto.
+Qed.
+
+#[export] Hint Resolve size_entry_min : lngen.
 
 (* begin hide *)
 
@@ -2164,10 +2201,17 @@ Ltac exp_lc_exists_tac :=
               let J2 := fresh in pose proof H as J2; apply degree_exp_wrt_exp_of_lc_exp in J2; clear H
           end).
 
+Ltac entry_lc_exists_tac :=
+  repeat (match goal with
+            | H : _ |- _ =>
+              fail 1
+          end).
+
 Lemma lc_typ_all_exists :
-forall X1 A1,
+forall X1 B1 A1,
+  lc_typ B1 ->
   lc_typ (open_typ_wrt_typ A1 (typ_var_f X1)) ->
-  lc_typ (typ_all A1).
+  lc_typ (typ_all B1 A1).
 Proof.
 intros; typ_lc_exists_tac; eauto 6 with lngen.
 Qed.
@@ -2182,14 +2226,15 @@ intros; exp_lc_exists_tac; eauto 6 with lngen.
 Qed.
 
 Lemma lc_exp_tabs_exists :
-forall X1 e1,
+forall X1 A1 e1,
+  lc_typ A1 ->
   lc_exp (open_exp_wrt_typ e1 (typ_var_f X1)) ->
-  lc_exp (exp_tabs e1).
+  lc_exp (exp_tabs A1 e1).
 Proof.
 intros; exp_lc_exists_tac; eauto 6 with lngen.
 Qed.
 
-#[export] Hint Extern 1 (lc_typ (typ_all _)) =>
+#[export] Hint Extern 1 (lc_typ (typ_all _ _)) =>
   let X1 := fresh in
   pick_fresh X1;
   apply (lc_typ_all_exists X1) : core.
@@ -2199,7 +2244,7 @@ Qed.
   pick_fresh x1;
   apply (lc_exp_abs_exists x1) : core.
 
-#[export] Hint Extern 1 (lc_exp (exp_tabs _)) =>
+#[export] Hint Extern 1 (lc_exp (exp_tabs _ _)) =>
   let X1 := fresh in
   pick_fresh X1;
   apply (lc_exp_tabs_exists X1) : core.
@@ -2255,15 +2300,15 @@ Qed.
 
 #[export] Hint Resolve lc_body_exp_wrt_exp : lngen.
 
-Lemma lc_body_typ_all_1 :
-forall A1,
-  lc_typ (typ_all A1) ->
+Lemma lc_body_typ_all_2 :
+forall B1 A1,
+  lc_typ (typ_all B1 A1) ->
   body_typ_wrt_typ A1.
 Proof.
 default_simp.
 Qed.
 
-#[export] Hint Resolve lc_body_typ_all_1 : lngen.
+#[export] Hint Resolve lc_body_typ_all_2 : lngen.
 
 Lemma lc_body_exp_abs_2 :
 forall A1 e1,
@@ -2275,15 +2320,15 @@ Qed.
 
 #[export] Hint Resolve lc_body_exp_abs_2 : lngen.
 
-Lemma lc_body_exp_tabs_1 :
-forall e1,
-  lc_exp (exp_tabs e1) ->
+Lemma lc_body_exp_tabs_2 :
+forall A1 e1,
+  lc_exp (exp_tabs A1 e1) ->
   body_exp_wrt_typ e1.
 Proof.
 default_simp.
 Qed.
 
-#[export] Hint Resolve lc_body_exp_tabs_1 : lngen.
+#[export] Hint Resolve lc_body_exp_tabs_2 : lngen.
 
 (* begin hide *)
 
@@ -4887,10 +4932,10 @@ Qed.
 #[export] Hint Resolve subst_exp_in_exp_close_exp_wrt_exp_open_exp_wrt_exp : lngen.
 
 Lemma subst_typ_in_typ_typ_all :
-forall X2 A2 A1 X1,
+forall X2 B1 A2 A1 X1,
   lc_typ A1 ->
   X2 `notin` ftvar_in_typ A1 `union` ftvar_in_typ A2 `union` singleton X1 ->
-  subst_typ_in_typ A1 X1 (typ_all A2) = typ_all (close_typ_wrt_typ X2 (subst_typ_in_typ A1 X1 (open_typ_wrt_typ A2 (typ_var_f X2)))).
+  subst_typ_in_typ A1 X1 (typ_all B1 A2) = typ_all (subst_typ_in_typ A1 X1 B1) (close_typ_wrt_typ X2 (subst_typ_in_typ A1 X1 (open_typ_wrt_typ A2 (typ_var_f X2)))).
 Proof.
 default_simp.
 Qed.
@@ -4909,10 +4954,10 @@ Qed.
 #[export] Hint Resolve subst_typ_in_exp_exp_abs : lngen.
 
 Lemma subst_typ_in_exp_exp_tabs :
-forall X2 e1 A1 X1,
+forall X2 A2 e1 A1 X1,
   lc_typ A1 ->
   X2 `notin` ftvar_in_typ A1 `union` ftvar_in_exp e1 `union` singleton X1 ->
-  subst_typ_in_exp A1 X1 (exp_tabs e1) = exp_tabs (close_exp_wrt_typ X2 (subst_typ_in_exp A1 X1 (open_exp_wrt_typ e1 (typ_var_f X2)))).
+  subst_typ_in_exp A1 X1 (exp_tabs A2 e1) = exp_tabs (subst_typ_in_typ A1 X1 A2) (close_exp_wrt_typ X2 (subst_typ_in_exp A1 X1 (open_exp_wrt_typ e1 (typ_var_f X2)))).
 Proof.
 default_simp.
 Qed.
@@ -4931,10 +4976,10 @@ Qed.
 #[export] Hint Resolve subst_exp_in_exp_exp_abs : lngen.
 
 Lemma subst_exp_in_exp_exp_tabs :
-forall X1 e2 e1 x1,
+forall X1 A1 e2 e1 x1,
   lc_exp e1 ->
   X1 `notin` ftvar_in_exp e1 `union` ftvar_in_exp e2 ->
-  subst_exp_in_exp e1 x1 (exp_tabs e2) = exp_tabs (close_exp_wrt_typ X1 (subst_exp_in_exp e1 x1 (open_exp_wrt_typ e2 (typ_var_f X1)))).
+  subst_exp_in_exp e1 x1 (exp_tabs A1 e2) = exp_tabs (A1) (close_exp_wrt_typ X1 (subst_exp_in_exp e1 x1 (open_exp_wrt_typ e2 (typ_var_f X1)))).
 Proof.
 default_simp.
 Qed.

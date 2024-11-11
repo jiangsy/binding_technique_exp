@@ -14,7 +14,7 @@ else
 	SED_FLAG := -i
 endif
 
-SYSTEMS := systemf stlc
+SYSTEMS := systemf stlc fsub
 IGNORE_DIRS := "test"
 
 # https://stackoverflow.com/questions/3774568/makefile-issue-smart-way-to-scan-directory-tree-for-c-files
