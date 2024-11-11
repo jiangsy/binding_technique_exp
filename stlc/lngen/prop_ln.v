@@ -41,6 +41,7 @@ Fixpoint close_exp_wrt_exp_rec (n1 : nat) (x1 : expvar) (e1 : exp) {struct e1} :
   match e1 with
     | exp_var_f x2 => if (x1 == x2) then (exp_var_b n1) else (exp_var_f x2)
     | exp_var_b n2 => if (lt_ge_dec n2 n1) then (exp_var_b n2) else (exp_var_b (S n2))
+    | exp_unit => exp_unit
     | exp_abs e2 => exp_abs (close_exp_wrt_exp_rec (S n1) x1 e2)
     | exp_app e2 e3 => exp_app (close_exp_wrt_exp_rec n1 x1 e2) (close_exp_wrt_exp_rec n1 x1 e3)
   end.
@@ -53,6 +54,7 @@ Definition close_exp_wrt_exp x1 e1 := close_exp_wrt_exp_rec 0 x1 e1.
 
 Fixpoint size_typ (A1 : typ) {struct A1} : nat :=
   match A1 with
+    | typ_unit => 1
     | typ_arr A2 A3 => 1 + (size_typ A2) + (size_typ A3)
   end.
 
@@ -60,6 +62,7 @@ Fixpoint size_exp (e1 : exp) {struct e1} : nat :=
   match e1 with
     | exp_var_f x1 => 1
     | exp_var_b n1 => 1
+    | exp_unit => 1
     | exp_abs e2 => 1 + (size_exp e2)
     | exp_app e2 e3 => 1 + (size_exp e2) + (size_exp e3)
   end.
@@ -76,6 +79,8 @@ Inductive degree_exp_wrt_exp : nat -> exp -> Prop :=
   | degree_wrt_exp_exp_var_b : forall n1 n2,
     lt n2 n1 ->
     degree_exp_wrt_exp n1 (exp_var_b n2)
+  | degree_wrt_exp_exp_unit : forall n1,
+    degree_exp_wrt_exp n1 (exp_unit)
   | degree_wrt_exp_exp_abs : forall n1 e1,
     degree_exp_wrt_exp (S n1) e1 ->
     degree_exp_wrt_exp n1 (exp_abs e1)
@@ -97,6 +102,8 @@ Combined Scheme degree_exp_wrt_exp_mutind from degree_exp_wrt_exp_ind'.
 Inductive lc_set_exp : exp -> Set :=
   | lc_set_exp_var_f : forall x1,
     lc_set_exp (exp_var_f x1)
+  | lc_set_exp_unit :
+    lc_set_exp (exp_unit)
   | lc_set_exp_abs : forall e1,
     (forall x1 : expvar, lc_set_exp (open_exp_wrt_exp e1 (exp_var_f x1))) ->
     lc_set_exp (exp_abs e1)
