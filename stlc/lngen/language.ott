@@ -1,4 +1,3 @@
-metavar typvar, X, Y, Z ::= {{ repr-locally-nameless }}
 metavar expvar, x, y, z ::= {{ repr-locally-nameless }}
 
 grammar
@@ -7,7 +6,6 @@ typ, A, B, C :: typ_ ::=
   | unit           ::   :: unit
   | A1 -> A2       ::   :: arr
   | ( A )          :: S :: paren {{ coq ([[A]]) }}
-  | { A2 / X } A1  :: M :: subst {{ coq (open_typ_wrt_typ [[X A1]] [[A2]]) }}
 
 exp, e, f, g :: exp_ ::=
   | x                                   ::   :: var

@@ -6,8 +6,6 @@ Require Import List.
 Import SubstNotations.
 Import UnscopedNotations.
 
-(* https://github.com/yiyunliu/autosubst-stlc/blob/master/typing.v *)
-
 Definition ctx := list typ.
 
 Inductive lookup {T} : nat -> list T -> T -> Prop :=

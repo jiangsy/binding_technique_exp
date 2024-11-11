@@ -74,17 +74,28 @@ Proof.
   - inversion H2. subst. eauto using typing_subst_var0.
 Qed.
 
-Theorem progress t A : 
-  nil ⊢ t : A ->
+(* dependent induction will introduce a dependency 
+on Eqdep.Eq_rect_eq.eq_rect_eq. Usually such a dependency
+should be eliminated. not sure if it's caused by polymorphism of `nil` here *)
+Theorem progress' Γ t A : 
+  Γ ⊢ t : A ->
+  Γ = nil ->
   is_value t \/ exists t', t ⤳ t'.
 Proof.
-  intros H. dependent induction H; simpl; eauto.
+  intros H. induction H; simpl; intros; subst; eauto.
   - inversion H.
   - right. inversion H; subst.
     + inversion H1. 
     + eauto using step. 
-    + specialize (IHtyping1 (JMeq_refl _)).
+    + specialize (IHtyping1 (eq_refl _)).
       destruct IHtyping1; eauto.
       * inversion H3.
       * destruct H3 as [t']. eauto using step.
+Qed.
+
+Theorem progress t A : 
+  nil ⊢ t : A ->
+  is_value t \/ exists t', t ⤳ t'.
+Proof.
+  intros H. eapply progress'; eauto.
 Qed.

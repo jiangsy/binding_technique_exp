@@ -4,6 +4,7 @@ Require stlc.lngen.prop_typing.
 Section stlc.
 
   Section autosubst2.
+    Import stlc.autosubst2.def_extra.
     Import stlc.autosubst2.prop_typing.
 
     Check preservation.
@@ -13,8 +14,9 @@ Section stlc.
   End autosubst2.
 
   Section lngen.
+    Import stlc.lngen.def_extra.
     Import stlc.lngen.prop_typing.
-
+    
     Check preservation.
     Print Assumptions preservation. 
     Check progress.

@@ -82,16 +82,24 @@ Proof.
     eapply typing_lc; eauto.
 Qed.
 
+Theorem progress' Γ t A : 
+  Γ ⊢ t : A ->
+  Γ = nil ->
+  is_value t \/ exists t', t ⤳ t'.
+Proof.
+  intros H. induction H; simpl; intros; subst; eauto.
+  - right. inversion H; subst.
+    + inversion H1. 
+    + eauto using step. 
+    + specialize (IHtyping1 (eq_refl _)).
+      destruct IHtyping1; eauto.
+      * inversion H3.
+      * destruct H3 as [t']. eauto using step.
+Qed.
+
 Theorem progress t A : 
   nil ⊢ t : A ->
   is_value t \/ exists t', t ⤳ t'.
 Proof.
-  intros H. dependent induction H; simpl; eauto.
-  - right. inversion H; subst.
-    + inversion H1. 
-    + eauto using step. 
-    + specialize (IHtyping1 (JMeq_refl _)).
-      destruct IHtyping1; eauto.
-      * inversion H3.
-      * destruct H3 as [t']. eauto using step.
+  intros H. eapply progress'; eauto.
 Qed.

@@ -3,7 +3,6 @@ Require Import Bool.
 Require Import Metalib.Metatheory.
 Require Import List.
 (** syntax *)
-Definition typvar : Set := var.
 Definition expvar : Set := var.
 
 Inductive exp : Set := 
