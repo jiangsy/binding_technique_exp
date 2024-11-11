@@ -1,5 +1,5 @@
-Require Import binder.lngen.def.
-Require Import binder.lngen.prop_ln.
+Require Import systemf.lngen.def.
+Require Import systemf.lngen.prop_ln.
 
 
 Inductive ctx_entry :=

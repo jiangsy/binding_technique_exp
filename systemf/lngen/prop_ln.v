@@ -5,9 +5,9 @@ Require Import Coq.Program.Equality.
 Require Export Metalib.Metatheory.
 Require Export Metalib.LibLNgen.
 
-Require Export binder.lngen.def.
+Require Export systemf.lngen.def.
 
-Local Set Warnings "-non-recursive". 
+Local Set Warnings "-non-recursive".
 
 (** NOTE: Auxiliary theorems are hidden in generated documentation.
     In general, there is a [_rec] version of every lemma involving

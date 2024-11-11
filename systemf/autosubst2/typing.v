@@ -1,9 +1,9 @@
 Require Import Coq.Program.Equality.
 Require Import List.
 
-Require Import binder.autosubst2.def.
-Require Import binder.autosubst2.prop_as_core.
-Require Import binder.autosubst2.prop_as_unscoped.
+Require Import systemf.autosubst2.def.
+Require Import systemf.autosubst2.prop_as_core.
+Require Import systemf.autosubst2.prop_as_unscoped.
 
 Definition ctx := list ftyp.
 
@@ -46,7 +46,7 @@ Inductive typing : ctx -> fexp -> ftyp -> Prop :=
   Γ ⊢ t : A ->
   Γ ⊢ (fexp_app s t) : B
 | typing_tabs : forall (Γ : ctx) (t : fexp) (A : ftyp),
-  (map (ren_ftyp shift) Γ) ⊢ t : A ->
+  (map (ren_ftyp ↑) Γ) ⊢ t : A ->
   Γ ⊢ (fexp_tabs t) : (ftyp_all A)
 | typing_tapp : forall (Γ : ctx) (t : fexp) (A B A' : ftyp),
   Γ ⊢ t : (ftyp_all A) ->
@@ -160,8 +160,12 @@ Proof.
     apply lookup_map_inv in H1. destruct H1 as [A' [Hf Hl]]. subst.
     apply H0 in Hl.
     eapply typing_rename with (ξ:=↑) (ζ:=id) (Δ:=Δ) in Hl.
-    + generalize Hl. asimpl. intros. auto. 
+    + asimpl in Hl. asimpl. auto.
     + eapply ctx_var_rename_refl; eauto. 
   - eapply typing_tapp with (A := subst_ftyp (up_ftyp_ftyp ρ) A); eauto.
     + rewrite H0. asimpl. auto.
 Qed.
+
+(* see also *)
+(* https://github.com/qcfu-bu/TYDE23/blob/50bd676e830e76beae7809a67ddcd19bc4e903b2/coq/theories/clc_substitution.v#L703 *)
+(* https://github.com/yiyunliu/autosubst-stlc/blob/master/typing.v *)

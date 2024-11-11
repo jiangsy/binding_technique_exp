@@ -4,6 +4,10 @@
 dist-newstyle/
 *~
 
+.FILE_LIST
+
+.DS_Store
+
 examples/index.html
 
 CoqMakefile
