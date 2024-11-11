@@ -19,10 +19,8 @@ IGNORE_DIRS := "test"
 
 # https://stackoverflow.com/questions/3774568/makefile-issue-smart-way-to-scan-directory-tree-for-c-files
 rwildcard=$(wildcard $(addsuffix $2, $1))$(foreach d,$(wildcard $(addsuffix *, $1)),$(call rwildcard,$d/,$2))
-ALL_SIGS_:= $(call rwildcard,${SYSTEMS},*.sig)
-ALL_SIGS:= $(shell echo ${ALL_SIGS_})
-ALL_OTTS_:= $(call rwildcard,${SYSTEMS},*.ott)
-ALL_OTTS:= $(shell echo ${ALL_OTTS_})
+ALL_SIGS:= $(call rwildcard,${SYSTEMS},*.sig)
+ALL_OTTS:= $(call rwildcard,${SYSTEMS},*.ott)
 
 ALL_SIG_DIRS:= $(foreach file,$(ALL_SIGS),$(dir $(file)))
 ALL_OTT_DIRS:= $(foreach file,$(ALL_OTTS),$(dir $(file)))
@@ -70,7 +68,6 @@ coq-only: $(COQ_MAKEFILE)
 	${MAKE} -f ${COQ_MAKEFILE}
 
 coq: $(COQ_MAKEFILE) lngen autosubst2
-	echo ${ALL_SIGS}
 	${MAKE} -f ${COQ_MAKEFILE}
 
 clean-coq-only: 
