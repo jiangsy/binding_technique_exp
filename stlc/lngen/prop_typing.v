@@ -3,8 +3,9 @@ Require Import Metalib.Metatheory.
 
 Require Import stlc.lngen.def_ott.
 Require Import stlc.lngen.prop_ln.
+Require Import common.ltac_common.
+Require Import common.ltac_ln.
 Require Import stlc.lngen.def_extra.
-Require Import stlc.lngen.def_ltac.
 
 Hint Constructors typing : core.
 
