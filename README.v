@@ -1,11 +1,11 @@
-Require stlc.autosubst2.prop_typing.
-Require stlc.lngen.prop_typing.
+Require stlc.autosubst2.prop_type_safety.
+Require stlc.lngen.prop_type_safety.
 
 Section stlc.
 
   Section autosubst2.
     Import stlc.autosubst2.def_extra.
-    Import stlc.autosubst2.prop_typing.
+    Import stlc.autosubst2.prop_type_safety.
 
     Check preservation.
     Print Assumptions preservation. 
@@ -15,7 +15,7 @@ Section stlc.
 
   Section lngen.
     Import stlc.lngen.def_extra.
-    Import stlc.lngen.prop_typing.
+    Import stlc.lngen.prop_type_safety.
     
     Check preservation.
     Print Assumptions preservation. 
