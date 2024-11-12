@@ -136,21 +136,42 @@ Proof.
     + rewrite H0. asimpl. auto.
 Qed.
 
+Hint Constructors typing : core.
+
+(* see also *)
+(* https://github.com/qcfu-bu/TYDE23/blob/50bd676e830e76beae7809a67ddcd19bc4e903b2/coq/theories/clc_substitution.v#L703 *)
+Corollary typing_subst_tvar0 Γ t A B :
+  (map (ren_typ ↑) Γ) ⊢ t : A ->
+  Γ ⊢ t [B .: typ_var;  exp_var] : A [B..].
+Proof.
+  intros. eapply typing_subst; eauto.
+  unfold ctx_var_subst. intros.
+  - apply lookup_map_inv in H0. destruct H0 as [A' [Hf Hl]]. subst.
+    asimpl. eauto. 
+Qed.
+
+Corollary typing_subst_var0 Γ t s A B:
+  (A :: Γ) ⊢ t : B ->
+  Γ ⊢ s : A ->
+  Γ ⊢ t [typ_var; s .: exp_var] : B.
+Proof.
+  intros. replace B with (B [typ_var]) by (asimpl; auto).
+  eapply typing_subst; eauto.
+  unfold ctx_var_subst. intros.
+  inversion H1; subst; asimpl; eauto.
+Qed.
+
 Theorem preservation Γ t t' A : 
   Γ ⊢ t : A ->
   t ⤳ t' ->
   Γ ⊢ t' : A.
 Proof.
   intros H. generalize dependent t'.
-  induction H; intros; auto.
-  - inversion H0.
-  - inversion H0.
-  - inversion H1; admit.
-  - inversion H0.
+  induction H; intros; auto; try solve [inversion H0; eauto].
   - inversion H1; subst; eauto.
-    + eapply typing_tapp; eauto.
-    + admit.
-Admitted.
-   
-(* see also *)
-(* https://github.com/qcfu-bu/TYDE23/blob/50bd676e830e76beae7809a67ddcd19bc4e903b2/coq/theories/clc_substitution.v#L703 *)
+    + inversion H; subst.
+      eapply typing_subst_var0; eauto.
+  - inversion H1; subst; eauto.
+    + inversion H; subst.
+      eapply typing_subst_tvar0; eauto.
+Qed.
