@@ -1,7 +1,6 @@
 Require Import systemf.lngen.def_ott.
 Require Import systemf.lngen.prop_ln.
 
-
 Inductive ctx_entry :=
 | tvar
 | var_typ (A : typ).

@@ -136,5 +136,21 @@ Proof.
     + rewrite H0. asimpl. auto.
 Qed.
 
+Theorem preservation Γ t t' A : 
+  Γ ⊢ t : A ->
+  t ⤳ t' ->
+  Γ ⊢ t' : A.
+Proof.
+  intros H. generalize dependent t'.
+  induction H; intros; auto.
+  - inversion H0.
+  - inversion H0.
+  - inversion H1; admit.
+  - inversion H0.
+  - inversion H1; subst; eauto.
+    + eapply typing_tapp; eauto.
+    + admit.
+Admitted.
+   
 (* see also *)
 (* https://github.com/qcfu-bu/TYDE23/blob/50bd676e830e76beae7809a67ddcd19bc4e903b2/coq/theories/clc_substitution.v#L703 *)

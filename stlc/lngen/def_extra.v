@@ -3,6 +3,13 @@ Require Import stlc.lngen.prop_ln.
 
 Definition ctx := list (atom * typ).
 
+Ltac gather_atoms ::=
+  let A := gather_atoms_with (fun x : vars => x) in
+  let B := gather_atoms_with (fun x : var => {{ x }}) in
+  let C := gather_atoms_with (fun x : exp => var_in_exp x) in
+  let D := gather_atoms_with (fun x : ctx => dom x) in
+  constr:(A \u B \u C \u D).
+
 Reserved Notation "Γ ⊢ t : A" 
   (at level 99, t at next level, no associativity).
 Inductive typing : ctx -> exp -> typ -> Prop :=
@@ -21,6 +28,7 @@ Inductive typing : ctx -> exp -> typ -> Prop :=
   Γ ⊢ (exp_app s t) : B
 where "Γ ⊢ t : A" := (typing Γ t A).
 
+(* weak head reduction *)
 Reserved Notation "t ⤳ t'" (at level 80).
 Inductive step : exp -> exp -> Prop :=
 | step_beta : forall (t s : exp),
@@ -36,11 +44,3 @@ Definition is_value (t : exp) : Prop :=
   | exp_unit => True
   | _ => False
   end.
-
-Ltac gather_atoms ::=
-  let A := gather_atoms_with (fun x : vars => x) in
-  let B := gather_atoms_with (fun x : var => {{ x }}) in
-  let C := gather_atoms_with (fun x : exp => var_in_exp x) in
-  let D := gather_atoms_with (fun x : ctx => dom x) in
-
-  constr:(A \u B \u C \u D).

@@ -29,6 +29,7 @@ Inductive typing : ctx -> exp -> typ -> Prop :=
   Γ ⊢ (exp_app s t) : B
 where "Γ ⊢ t : A" := (typing Γ t A).
 
+(* weak head reduction *)
 Reserved Notation "t ⤳ t'" (at level 80).
 Inductive step : exp -> exp -> Prop :=
 | step_beta : forall (t s : exp),

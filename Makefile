@@ -81,4 +81,8 @@ coq: $(COQ_MAKEFILE) lngen autosubst2
 clean-coq-only: 
 	${MAKE} -f ${COQ_MAKEFILE} clean
 
+clean: clean-coq-only
+	rm ${COQ_MAKEFILE} ${COQ_MAKEFILE}.conf
+	rm ${OTT_OUTS} ${LNGEN_OUTS} ${AUTOSUBST2_OUTS}
+
 .phony: coq coq_only ott lngen autosubst2
