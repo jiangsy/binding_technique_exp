@@ -1,4 +1,4 @@
-Require Import systemf.autosubst2.prop_as_core systemf.autosubst2.prop_as_unscoped.
+Require Import common.prop_as_core common.prop_as_unscoped.
 
 Require Import Setoid Morphisms Relation_Definitions.
 

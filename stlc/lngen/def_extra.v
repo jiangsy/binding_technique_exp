@@ -40,7 +40,7 @@ Definition is_value (t : exp) : Prop :=
 Ltac gather_atoms ::=
   let A := gather_atoms_with (fun x : vars => x) in
   let B := gather_atoms_with (fun x : var => {{ x }}) in
-  let C := gather_atoms_with (fun x => var_in_exp x) in
+  let C := gather_atoms_with (fun x : exp => var_in_exp x) in
   let D := gather_atoms_with (fun x : ctx => dom x) in
 
   constr:(A \u B \u C \u D).

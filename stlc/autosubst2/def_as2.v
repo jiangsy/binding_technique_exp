@@ -1,4 +1,4 @@
-Require Import stlc.autosubst2.prop_as_core stlc.autosubst2.prop_as_unscoped.
+Require Import common.prop_as_core common.prop_as_unscoped.
 
 Require Import Setoid Morphisms Relation_Definitions.
 

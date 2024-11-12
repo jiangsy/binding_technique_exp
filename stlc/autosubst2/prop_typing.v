@@ -1,5 +1,5 @@
-Require Import stlc.autosubst2.prop_as_core.
-Require Import stlc.autosubst2.prop_as_unscoped.
+Require Import common.prop_as_core.
+Require Import common.prop_as_unscoped.
 Require Import stlc.autosubst2.def_as2.
 Require Import stlc.autosubst2.def_extra.
 

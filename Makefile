@@ -27,21 +27,29 @@ ALL_OTT_DIRS:= $(foreach file,$(ALL_OTTS),$(dir $(file)))
 
 OTT_OUTS   := $(addsuffix def_ott.v,${ALL_OTT_DIRS})
 LNGEN_OUTS := $(addsuffix prop_ln.v,${ALL_OTT_DIRS})
-AUTOSUBST2_OUTS := $(addsuffix def_as2.v,${ALL_SIG_DIRS}) $(addsuffix prop_as_unscoped.v,${ALL_SIG_DIRS}) $(addsuffix prop_as_core.v,${ALL_SIG_DIRS})
+# AUTOSUBST2_OUTS := $(addsuffix def_as2.v,${ALL_SIG_DIRS}) $(addsuffix prop_as_unscoped.v,${ALL_SIG_DIRS}) $(addsuffix prop_as_core.v,${ALL_SIG_DIRS})
+AUTOSUBST2_OUTS := $(addsuffix def_as2.v,${ALL_SIG_DIRS})
 
 ott: $(OTT_OUTS)
 lngen: ${LNGEN_OUTS}
 autosubst2: ${AUTOSUBST2_OUTS}
 
-%/def_as2.v %/prop_as_core.v %/prop_as_unscoped.v: %/language.sig
+# %/def_as2.v %/prop_as_core.v %/prop_as_unscoped.v: %/language.sig
+# 	autosubst $*/language.sig -o $@ -s ucoq
+# 	# rename files and modify imports
+# 	mv $*/core.v $*/prop_as_core.v
+# 	mv $*/unscoped.v $*/prop_as_unscoped.v
+# 	sed -e "s/Require Import core./Require Import $(subst /,.,$*).prop_as_core./g" ${SED_FLAG}  $*/prop_as_unscoped.v
+#   sed -e "s/Require Import core unscoped./Require Import $(subst /,.,$*).prop_as_core $(subst /,.,$*).prop_as_unscoped./g" ${SED_FLAG} $*/def_as2.v
+# 	# fix warning about % in Arguments in Coq 8.19
+# 	sed -e "/Arguments/ s/%/%_/g" ${SED_FLAG} $*/prop_as_unscoped.v
+# 	# modify constructor names, subst "var_*" intro "*_var" except "var_zero"
+# 	perl -i -pe 's/\bvar_((?!zero\b)[a-zA-Z0-9]+)/\1_var/g' $*/def_as2.v
+
+%/def_as2.v: %/language.sig
 	autosubst $*/language.sig -o $@ -s ucoq
-	# rename files and modify imports
-	mv $*/core.v $*/prop_as_core.v
-	mv $*/unscoped.v $*/prop_as_unscoped.v
-	sed -e "s/Require Import core./Require Import $(subst /,.,$*).prop_as_core./g" ${SED_FLAG}  $*/prop_as_unscoped.v
-	sed -e "s/Require Import core unscoped./Require Import $(subst /,.,$*).prop_as_core $(subst /,.,$*).prop_as_unscoped./g" ${SED_FLAG} $*/def_as2.v
-	# fix warning about % in Arguments in Coq 8.19
-	sed -e "/Arguments/ s/%/%_/g" ${SED_FLAG} $*/prop_as_unscoped.v
+	rm $*/core.v $*/unscoped.v
+	sed -e "s/Require Import core unscoped./Require Import common.prop_as_core common.prop_as_unscoped./g" ${SED_FLAG} $*/def_as2.v
 	# modify constructor names, subst "var_*" intro "*_var" except "var_zero"
 	perl -i -pe 's/\bvar_((?!zero\b)[a-zA-Z0-9]+)/\1_var/g' $*/def_as2.v
 
