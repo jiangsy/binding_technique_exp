@@ -1,6 +1,12 @@
 Require Import Coq.Program.Equality.
 Require Import List.
 From Hammer Require Import Tactics.
+From Coq Require Import ssreflect ssrfun ssrbool.
+
+Set Implicit Arguments.
+Unset Strict Implicit.
+Unset Printing Implicit Defensive.
+
 
 Require Import common.prop_as_core.
 Require Import common.prop_as_unscoped.
@@ -64,28 +70,22 @@ Theorem typing_rename Γ t A :
     ctx_var_rename ζ Γ Δ ->
     (map (ren_typ ξ) Δ) ⊢ t ⟨ξ;ζ⟩ : A ⟨ξ⟩.
 Proof.
-  intros H. induction H; intros; asimpl.
-  - eapply typing_var.
-    eapply lookup_map; eauto.
-  - eapply typing_abs.
+  intros H. induction H; 
+    try hauto q:on inv:typing,lookup ctrs:typing unfold:ctx_var_rename limit:100.
+  - hauto q:on use:lookup_map ctrs:typing unfold:ctx_var_rename.
+  - intros. asimpl. eapply typing_abs.
     replace ((ren_typ ξ A) :: (list_map (ren_typ ξ) Δ)) with (map (ren_typ ξ) (A :: Δ)) by auto.
-    eapply IHtyping; eauto.
-    unfold ctx_var_rename; intros.
-    inversion H1; subst; eauto.
-    fsimpl. inversion H1; subst; eauto. econstructor.
-    eapply H0; eauto.
-  - eapply typing_app; eauto. 
-  - eapply typing_tabs; asimpl; eauto.
+    eapply IHtyping.
+    hauto q:on unfold:ctx_var_rename inv:lookup ctrs:lookup.
+  - intros; asimpl. eapply typing_tabs; asimpl; eauto.
     apply ctx_var_rename_map with (f := ren_typ ↑) in H0.
     eapply IHtyping with (ξ := 0 .: ξ >> S) in H0; eauto.
     erewrite list_comp; eauto.
     erewrite list_comp in H0; eauto.
     intros. asimpl; auto.
-  - rewrite H0.
+  - intros. ssimpl.
     eapply IHtyping with (ξ := ξ) in H1; eauto.
-    eapply typing_tapp with (A:=A ⟨up_ren ξ⟩).
-    + eauto.
-    + asimpl. auto.
+    eapply typing_tapp with (A:=A ⟨up_ren ξ⟩); asimpl; auto.
 Qed.
 
 Lemma ctx_map_id : forall Γ,
@@ -120,18 +120,15 @@ Proof.
   - eapply typing_abs.
     assert (ctx_var_subst (A :: Γ) (A [ρ] :: Δ) ((up_exp_exp τ)) (ρ)).
     + unfold ctx_var_subst in *. intros.
-      inversion H1; subst; asimpl; eauto.
-      * econstructor; eauto.
-      * apply H0 in H6. fsimpl. eauto. 
-        apply typing_weaken with (B:=A [ρ]) in H6. eauto.
-    + eapply IHtyping in H1. asimpl. eauto.
+      hauto inv:lookup ctrs:typing,lookup use:typing_weaken.
+    + hauto.
   - eapply typing_app; eauto. 
   - eapply typing_tabs.
     eapply IHtyping. unfold ctx_var_subst in *. intros.
     apply lookup_map_inv in H1. destruct H1 as [A' [Hf Hl]]. subst.
     apply H0 in Hl.
     eapply typing_rename with (ξ:=↑) (ζ:=id) (Δ:=Δ) in Hl.
-    + asimpl in Hl. asimpl. auto.
+    + asimpl in Hl. auto.
     + eapply ctx_var_rename_refl; eauto. 
   - eapply typing_tapp with (A := subst_typ (up_typ_typ ρ) A); eauto.
     + rewrite H0. asimpl. auto.
@@ -158,8 +155,8 @@ Corollary typing_subst_var0 Γ t s A B:
 Proof.
   intros. replace B with (B [typ_var]) by (asimpl; auto).
   eapply typing_subst; eauto.
-  unfold ctx_var_subst. intros.
-  inversion H1; subst; asimpl; eauto.
+  unfold ctx_var_subst. intros. asimpl.
+  hauto q:on inv:lookup ctrs:typing.
 Qed.
 
 Theorem preservation Γ t t' A : 
@@ -167,8 +164,8 @@ Theorem preservation Γ t t' A :
   t ⤳ t' ->
   Γ ⊢ t' : A.
 Proof.
-  intros H. generalize dependent t'.
-  induction H; intros * Hstep; try hauto q:on 
+  move => Ht. move: t'. 
+  elim : Γ t A / Ht; hauto q:on 
     inv:step,typing ctrs:typing use:typing_subst_var0,typing_subst_tvar0.
 Qed.
 
@@ -179,8 +176,8 @@ Theorem progress' Γ t A :
   Γ = nil ->
   is_value t \/ exists t', t ⤳ t'.
 Proof.
-  intros. induction H;
-    hauto q:on inv:step,typing,lookup ctrs:step limit:100.
+  intro. induction H;
+    hauto q:on inv:step,typing,lookup ctrs:step depth:3.
 Qed.
 
 Theorem progress t A : 
