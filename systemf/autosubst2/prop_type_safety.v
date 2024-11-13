@@ -209,7 +209,6 @@ Proof.
     + destruct H0 as [t' H0]. eauto.
 Qed.
 
-
 Theorem progress t A : 
   nil ⊢ t : A ->
   is_value t \/ exists t', t ⤳ t'.
