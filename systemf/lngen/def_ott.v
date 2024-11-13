@@ -105,32 +105,32 @@ Inductive lc_exp : exp -> Prop :=    (* defn lc_exp *)
      (lc_typ A) ->
      (lc_exp (exp_tapp e A)).
 (** free variables *)
-Fixpoint ftvar_in_typ (A_5:typ) : vars :=
+Fixpoint tvar_in_typ (A_5:typ) : vars :=
   match A_5 with
   | (typ_var_b nat) => {}
   | (typ_var_f X) => {{X}}
-  | (typ_arr A1 A2) => (ftvar_in_typ A1) \u (ftvar_in_typ A2)
-  | (typ_all A) => (ftvar_in_typ A)
+  | (typ_arr A1 A2) => (tvar_in_typ A1) \u (tvar_in_typ A2)
+  | (typ_all A) => (tvar_in_typ A)
 end.
 
-Fixpoint fvar_in_exp (e_5:exp) : vars :=
+Fixpoint var_in_exp (e_5:exp) : vars :=
   match e_5 with
   | (exp_var_b nat) => {}
   | (exp_var_f x) => {{x}}
-  | (exp_abs A e) => (fvar_in_exp e)
-  | (exp_app e1 e2) => (fvar_in_exp e1) \u (fvar_in_exp e2)
-  | (exp_tabs e) => (fvar_in_exp e)
-  | (exp_tapp e A) => (fvar_in_exp e)
+  | (exp_abs A e) => (var_in_exp e)
+  | (exp_app e1 e2) => (var_in_exp e1) \u (var_in_exp e2)
+  | (exp_tabs e) => (var_in_exp e)
+  | (exp_tapp e A) => (var_in_exp e)
 end.
 
-Fixpoint ftvar_in_exp (e_5:exp) : vars :=
+Fixpoint tvar_in_exp (e_5:exp) : vars :=
   match e_5 with
   | (exp_var_b nat) => {}
   | (exp_var_f x) => {}
-  | (exp_abs A e) => (ftvar_in_typ A) \u (ftvar_in_exp e)
-  | (exp_app e1 e2) => (ftvar_in_exp e1) \u (ftvar_in_exp e2)
-  | (exp_tabs e) => (ftvar_in_exp e)
-  | (exp_tapp e A) => (ftvar_in_exp e) \u (ftvar_in_typ A)
+  | (exp_abs A e) => (tvar_in_typ A) \u (tvar_in_exp e)
+  | (exp_app e1 e2) => (tvar_in_exp e1) \u (tvar_in_exp e2)
+  | (exp_tabs e) => (tvar_in_exp e)
+  | (exp_tapp e A) => (tvar_in_exp e) \u (tvar_in_typ A)
 end.
 
 (** substitutions *)

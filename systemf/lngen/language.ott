@@ -25,5 +25,5 @@ substitutions
   single e x :: subst_exp_in
 
 freevars
-  A X :: ftvar_in
-  e x :: fvar_in
+  A X :: tvar_in
+  e x :: var_in

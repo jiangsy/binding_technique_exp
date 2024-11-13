@@ -142,7 +142,7 @@ Hint Constructors typing : core.
 (* https://github.com/qcfu-bu/TYDE23/blob/50bd676e830e76beae7809a67ddcd19bc4e903b2/coq/theories/clc_substitution.v#L703 *)
 Corollary typing_subst_tvar0 Γ t A B :
   (map (ren_typ ↑) Γ) ⊢ t : A ->
-  Γ ⊢ t [B .: typ_var;  exp_var] : A [B..].
+  Γ ⊢ t [B .: typ_var; exp_var] : A [B..].
 Proof.
   intros. eapply typing_subst; eauto.
   unfold ctx_var_subst. intros.
@@ -167,11 +167,52 @@ Theorem preservation Γ t t' A :
   Γ ⊢ t' : A.
 Proof.
   intros H. generalize dependent t'.
-  induction H; intros; auto; try solve [inversion H0; eauto].
-  - inversion H1; subst; eauto.
+  induction H; intros * Hstep; auto; try solve [inversion Hstep; eauto].
+  - inversion Hstep; subst; eauto.
     + inversion H; subst.
       eapply typing_subst_var0; eauto.
-  - inversion H1; subst; eauto.
+  - inversion Hstep; subst; eauto.
     + inversion H; subst.
       eapply typing_subst_tvar0; eauto.
+Qed.
+
+Hint Constructors step : core.  
+
+Theorem progress' Γ t A : 
+  Γ ⊢ t : A ->
+  Γ = nil ->
+  is_value t \/ exists t', t ⤳ t'.
+Proof.
+  intros. induction H; subst; simpl; eauto.
+  - inversion H.
+  - inversion H; subst; eauto.
+    + inversion H0.
+    + specialize (IHtyping2 (eq_refl _)).
+      right; intuition; eauto.
+      * destruct H0. eauto.
+      * destruct H3. inversion H2.
+    + specialize (IHtyping1 (eq_refl _)). 
+      destruct IHtyping1. 
+      * inversion H3.
+      * specialize (IHtyping2 (eq_refl _)). 
+        destruct H3.
+        destruct IHtyping2; right; eauto.
+    + specialize (IHtyping1 (eq_refl _)). 
+      destruct IHtyping1. 
+      * inversion H3.
+      * specialize (IHtyping2 (eq_refl _)). 
+        destruct H3.
+        destruct IHtyping2; right; eauto.
+  - specialize (IHtyping (eq_refl _)); auto.
+    inversion IHtyping.
+    + inversion H; subst; eauto. 
+    + destruct H0 as [t' H0]. eauto.
+Qed.
+
+
+Theorem progress t A : 
+  nil ⊢ t : A ->
+  is_value t \/ exists t', t ⤳ t'.
+Proof.
+  intros. eapply progress'; eauto.
 Qed.
