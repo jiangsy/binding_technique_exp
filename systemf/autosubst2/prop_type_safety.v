@@ -1,5 +1,6 @@
 Require Import Coq.Program.Equality.
 Require Import List.
+From Hammer Require Import Tactics.
 
 Require Import common.prop_as_core.
 Require Import common.prop_as_unscoped.
@@ -167,13 +168,8 @@ Theorem preservation Γ t t' A :
   Γ ⊢ t' : A.
 Proof.
   intros H. generalize dependent t'.
-  induction H; intros * Hstep; auto; try solve [inversion Hstep; eauto].
-  - inversion Hstep; subst; eauto.
-    + inversion H; subst.
-      eapply typing_subst_var0; eauto.
-  - inversion Hstep; subst; eauto.
-    + inversion H; subst.
-      eapply typing_subst_tvar0; eauto.
+  induction H; intros * Hstep; try hauto q:on 
+    inv:step,typing ctrs:typing use:typing_subst_var0,typing_subst_tvar0.
 Qed.
 
 Hint Constructors step : core.  
@@ -183,35 +179,13 @@ Theorem progress' Γ t A :
   Γ = nil ->
   is_value t \/ exists t', t ⤳ t'.
 Proof.
-  intros. induction H; subst; simpl; eauto.
-  - inversion H.
-  - inversion H; subst; eauto.
-    + inversion H0.
-    + specialize (IHtyping2 (eq_refl _)).
-      right; intuition; eauto.
-      * destruct H0. eauto.
-      * destruct H3. inversion H2.
-    + specialize (IHtyping1 (eq_refl _)). 
-      destruct IHtyping1. 
-      * inversion H3.
-      * specialize (IHtyping2 (eq_refl _)). 
-        destruct H3.
-        destruct IHtyping2; right; eauto.
-    + specialize (IHtyping1 (eq_refl _)). 
-      destruct IHtyping1. 
-      * inversion H3.
-      * specialize (IHtyping2 (eq_refl _)). 
-        destruct H3.
-        destruct IHtyping2; right; eauto.
-  - specialize (IHtyping (eq_refl _)); auto.
-    inversion IHtyping.
-    + inversion H; subst; eauto. 
-    + destruct H0 as [t' H0]. eauto.
+  intros. induction H;
+    hauto q:on inv:step,typing,lookup ctrs:step limit:100.
 Qed.
 
 Theorem progress t A : 
   nil ⊢ t : A ->
   is_value t \/ exists t', t ⤳ t'.
 Proof.
-  intros. eapply progress'; eauto.
+  hauto use:progress'.
 Qed.
