@@ -16,7 +16,7 @@ Import UnscopedNotations.
 
 Hint Constructors lookup typing : core.
 
-Theorem typing_rename Γ t A: 
+Theorem typing_renaming Γ t A: 
   Γ ⊢ t : A ->
   forall Δ ζ,
     ctx_var_rename ζ Γ Δ ->
@@ -26,12 +26,12 @@ Proof.
     hauto q:on unfold:ctx_var_rename inv:typing,lookup ctrs:typing,lookup.
 Qed.
 
-Corollary typing_weaken : forall Γ t A B,
+Corollary typing_weakening : forall Γ t A B,
   Γ ⊢ t : A ->
   (B :: Γ) ⊢ t ⟨↑⟩ : A.
 Proof.
   hauto q:on unfold:ctx_var_rename 
-    use:typing_rename ctrs:typing,lookup.
+    use:typing_renaming ctrs:typing,lookup.
 Qed.
 
 Definition ctx_var_subst Γ Δ τ := 
@@ -44,7 +44,7 @@ Theorem typing_subst_var Γ t A :
     Δ ⊢ t [τ] : A.
 Proof.
   intro H. induction H; 
-    try hauto q:on unfold!:ctx_var_subst drew:off exh:off inv:typing,lookup ctrs:typing use:typing_weaken limit:200.
+    try hauto q:on unfold!:ctx_var_subst drew:off exh:off inv:typing,lookup ctrs:typing use:typing_weakening limit:200.
 Qed.
 
 Corollary typing_subst_var0 Γ t s A B: 

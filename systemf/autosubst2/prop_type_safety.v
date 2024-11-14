@@ -61,7 +61,7 @@ Proof.
   hauto q:on inv:lookup ctrs:lookup use:lookup_map depth:3.
 Qed.
 
-Theorem typing_rename Γ t A : 
+Theorem typing_renaming Γ t A : 
   Γ ⊢ t : A ->
   forall Δ ξ ζ,
     ctx_var_rename ζ Γ Δ ->
@@ -92,13 +92,13 @@ Proof.
   rewrite <- IHΓ at 2; asimpl; eauto.
 Qed.
 
-Corollary typing_weaken : forall Γ t A B,
+Corollary typing_weakening : forall Γ t A B,
   Γ ⊢ t : A ->
   (B :: Γ) ⊢ t ⟨id ; ↑⟩ : A.
 Proof.
   intros. rewrite <- (ctx_map_id (B :: Γ)).
   replace A with (A ⟨id⟩) by (asimpl; auto).
-  eapply typing_rename; eauto.
+  eapply typing_renaming; eauto.
   hauto unfold:ctx_var_rename inv:lookup ctrs:lookup.
 Qed.
 
@@ -117,14 +117,14 @@ Proof.
   - eapply typing_abs.
     assert (ctx_var_subst (A :: Γ) (A [ρ] :: Δ) ((up_exp_exp τ)) (ρ)).
     + unfold ctx_var_subst in *. intros.
-      hauto inv:lookup ctrs:typing,lookup use:typing_weaken.
+      hauto inv:lookup ctrs:typing,lookup use:typing_weakening.
     + hauto.
   - eapply typing_app; eauto. 
   - eapply typing_tabs.
     eapply IHtyping. unfold ctx_var_subst in *. intros.
     apply lookup_map_inv in H1. destruct H1 as [A' [Hf Hl]]. subst.
     apply H0 in Hl.
-    eapply typing_rename with (ξ:=↑) (ζ:=id) (Δ:=Δ) in Hl.
+    eapply typing_renaming with (ξ:=↑) (ζ:=id) (Δ:=Δ) in Hl.
     + asimpl in Hl. auto.
     + eapply ctx_var_rename_refl; eauto. 
   - eapply typing_tapp with (A := subst_typ (up_typ_typ ρ) A); eauto.

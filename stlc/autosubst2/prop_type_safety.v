@@ -14,7 +14,7 @@ Import UnscopedNotations.
 
 Hint Constructors lookup typing : core.
 
-Theorem typing_rename Γ t A : 
+Theorem typing_renaming Γ t A : 
   Γ ⊢ t : A ->
   forall Δ ζ,
     ctx_var_rename ζ Γ Δ ->
@@ -28,12 +28,12 @@ Proof.
     econstructor. eauto.
 Qed.
 
-Corollary typing_weaken : forall Γ t A B,
+Corollary typing_weakening : forall Γ t A B,
   Γ ⊢ t : A ->
   (B :: Γ) ⊢ t ⟨↑⟩ : A.
 Proof.
   intros. 
-  eapply typing_rename; eauto.
+  eapply typing_renaming; eauto.
   - unfold ctx_var_rename. intros. eauto.
 Qed.
 
@@ -51,7 +51,7 @@ Proof.
     eapply IHtyping.
     unfold ctx_var_subst in *. intros.
     inversion H1; subst; asimpl; eauto.
-    eapply typing_weaken; eauto.
+    eapply typing_weakening; eauto.
 Qed.
 
 Corollary typing_subst_var0 Γ t s A B: 
