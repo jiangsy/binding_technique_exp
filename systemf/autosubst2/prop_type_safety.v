@@ -7,7 +7,6 @@ Set Implicit Arguments.
 Unset Strict Implicit.
 Unset Printing Implicit Defensive.
 
-
 Require Import common.prop_as_core.
 Require Import common.prop_as_unscoped.
 Require Import systemf.autosubst2.def_as2.
@@ -59,9 +58,7 @@ Lemma ctx_var_rename_map {T} : forall Γ Δ ζ (f : T -> T),
 Proof.
   intros. unfold ctx_var_rename in *. intros.
   apply lookup_map_inv in H0. destruct H0 as [A' [Hf Hl]].
-  subst.
-  apply H in Hl.
-  apply lookup_map; eauto.
+  hauto q:on inv:lookup ctrs:lookup use:lookup_map depth:3.
 Qed.
 
 Theorem typing_rename Γ t A : 
@@ -82,7 +79,7 @@ Proof.
     eapply IHtyping with (ξ := 0 .: ξ >> S) in H0; eauto.
     erewrite list_comp; eauto.
     erewrite list_comp in H0; eauto.
-    intros. asimpl; auto.
+    hauto simp+:asimpl.
   - intros. ssimpl.
     eapply IHtyping with (ξ := ξ) in H1; eauto.
     eapply typing_tapp with (A:=A ⟨up_ren ξ⟩); asimpl; auto.
@@ -102,7 +99,7 @@ Proof.
   intros. rewrite <- (ctx_map_id (B :: Γ)).
   replace A with (A ⟨id⟩) by (asimpl; auto).
   eapply typing_rename; eauto.
-  - unfold ctx_var_rename. intros. eauto.
+  hauto unfold:ctx_var_rename inv:lookup ctrs:lookup.
 Qed.
 
 Definition ctx_var_subst Γ Δ τ ρ := 
@@ -131,7 +128,7 @@ Proof.
     + asimpl in Hl. auto.
     + eapply ctx_var_rename_refl; eauto. 
   - eapply typing_tapp with (A := subst_typ (up_typ_typ ρ) A); eauto.
-    + rewrite H0. asimpl. auto.
+    hauto simp+:asimpl.
 Qed.
 
 Hint Constructors typing : core.
