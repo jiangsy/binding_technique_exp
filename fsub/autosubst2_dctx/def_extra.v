@@ -9,18 +9,39 @@ Import UnscopedNotations.
 
 Definition ctx := list typ.
 
-Inductive lookup {T} : nat -> list T -> T -> Prop :=
-| here A Γ : lookup 0 (A :: Γ) A
-| there n Γ A B : lookup n Γ A -> lookup (S n) (cons B Γ) A.
+Inductive lookup_tvar : nat -> list typ -> typ -> Prop :=
+| here_tvar A Γ : lookup_tvar 0 (A :: Γ) (A ⟨ ↑ ⟩) 
+| there_tvar n Γ A B : lookup_tvar n Γ A -> lookup_tvar (S n) (cons B Γ) (A ⟨ ↑ ⟩).
+
+Inductive lookup_var : nat -> list typ -> typ -> Prop :=
+| here_var A Γ : lookup_var 0 (A :: Γ) (A ⟨ ↑ ⟩) 
+| there_var n Γ A B : lookup_var n Γ A -> lookup_var (S n) (cons B Γ) (A ⟨ ↑ ⟩).
 
 Fixpoint wf_typ Δ A := match A with
-  | typ_var X => exists B, lookup X Δ B
+  | typ_var X => exists B, lookup_tvar X Δ B
   | typ_top => True
   | typ_arr A B => wf_typ Δ A /\ wf_typ Δ B
   | typ_all A B => wf_typ Δ A /\ wf_typ (A :: Δ) B
 end.
 
 Notation "Δ ⊢ A" := (wf_typ Δ A) (at level 99).
+
+(* Reserved Notation "Δ ⊢ A" (at level 99).
+Inductive wf_typ : ctx -> typ -> Prop :=
+| wf_tvar Δ X A :
+  lookup X Δ A ->
+  Δ ⊢ typ_var X
+| wf_top Δ :
+  Δ ⊢ typ_top
+| wf_arr Δ A B :
+  Δ ⊢ A ->
+  Δ ⊢ B ->
+  Δ ⊢ (typ_arr A B)
+| wf_all Δ A B : 
+  Δ ⊢ A ->
+  (A :: Δ) ⊢ B ->
+  Δ ⊢ (typ_all A B)
+where "Δ ⊢ A" := (wf_typ Δ A). *)
 
 Reserved Notation "Δ ⊢ A <: B" 
   (at level 99, A at next level, no associativity).
@@ -32,17 +53,17 @@ Inductive subtyping : ctx -> typ -> typ -> Prop :=
   Δ ⊢ typ_var X ->
   Δ ⊢ typ_var X <: typ_var X
 | sub_tvar_bound Δ X A B: 
-  lookup X Δ A ->
+  lookup_tvar X Δ A ->
   Δ ⊢ A <: B ->
   Δ ⊢ typ_var X <: B
 | sub_arrow Δ A1 A2 B1 B2 : 
   Δ ⊢ B1 <: A1 ->
   Δ ⊢ A2 <: B2 ->
   Δ ⊢ (typ_arr A1 A2) <: (typ_arr B1 B2)
-| sub_all Δ A1 A2 B1 B2 : 
-  Δ ⊢ B1 ->
-  Δ ⊢ B1 <: A1 ->
-  (B1 :: Δ) ⊢ A2 <: B2 ->
+| sub_all Δ A1 A2 B1 B2
+  (Hwf : Δ ⊢ B1) 
+  (Hsub1 : Δ ⊢ B1 <: A1)
+  (Hsub2 : (B1 :: Δ) ⊢ A2 <: B2) :
   Δ ⊢ (typ_all A1 A2) <: (typ_all B1 B2)
 where "Δ ⊢ A <: B" := (subtyping Δ A B).
 
@@ -50,7 +71,7 @@ Reserved Notation "Δ ;; Γ ⊢ t : A"
   (at level 99, Γ at next level, t at next level, no associativity).
 Inductive typing : ctx -> ctx -> exp -> typ -> Prop :=
 | typing_var Δ Γ i A :
-  lookup i Γ A ->
+  lookup_var i Γ A ->
   Δ ;; Γ ⊢ (exp_var i) : A
 | typing_abs Δ Γ t A B :
   Δ ⊢ A ->
