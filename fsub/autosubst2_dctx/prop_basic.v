@@ -89,6 +89,19 @@ Qed.
 Definition ctx_var_rename Γ Γ' ξ ζ :=
   forall x A, lookup_var x Γ A -> lookup_var (ζ x) Γ' (A ⟨ ξ ⟩).
 
+Lemma lookup_map : forall A f Γ x ,
+  lookup_var x Γ A -> lookup_var x (map f Γ) (f A).
+Proof.
+  intros. induction H; hauto inv:lookup_var ctrs:lookup_var.
+Qed.
+
+Lemma lookup_var_map_inv : forall x A' f Γ,
+  lookup_var x (map f Γ) A' -> exists A, A' = (f A) /\ lookup_var x Γ A.
+Proof.
+  intros. dependent induction H; 
+    destruct Γ; hauto inv:lookup_var ctrs:lookup_var.
+Qed.
+
 Lemma typing_renaming Δ Δ' Γ Γ' t A ξ ζ:
   Δ ;; Γ ⊢ t : A ->
   ctx_tvar_rename Δ Δ' ξ ->
@@ -113,11 +126,16 @@ Proof.
         -- asimpl. replace (ren_typ (ξ >> S) A0) with (A0 ⟨ξ⟩ ⟨S⟩) by (asimpl; auto).
            hauto inv:lookup_tvar ctrs:lookup_tvar.
       * unfold ctx_var_rename in *. intros. asimpl.
-        admit. 
+        eapply lookup_var_map_inv in H4.
+        destruct H4 as [A' [H4 H5]]. subst.
+        replace (ren_typ (0 .: ξ >> S) (ren_typ ↑ A')) with (A' ⟨↑ >> (0 .: ξ >> S)⟩) by (asimpl; auto).
+        asimpl.
+        replace (ren_typ (ξ >> S) A') with (A' ⟨ξ⟩ ⟨S⟩) by (asimpl; auto). 
+        eapply lookup_map; eauto.
   - subst. asimpl. 
     eapply typing_tapp with (A:=A ⟨ξ⟩) (B:=B ⟨up_ren ξ⟩); eauto.
     + hauto use:sub_renaming_tvar ctrs:subtyping.
     + asimpl. auto.
   - eapply typing_sub; eauto.
     eapply sub_renaming_tvar; eauto.
-Admitted.
+Qed.

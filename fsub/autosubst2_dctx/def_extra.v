@@ -10,8 +10,8 @@ Import UnscopedNotations.
 Definition ctx := list typ.
 
 Inductive lookup_tvar : nat -> list typ -> typ -> Prop :=
-| here_tvar A Γ : lookup_tvar 0 (A :: Γ) (A ⟨ ↑ ⟩) 
-| there_tvar n Γ A B : lookup_tvar n Γ A -> lookup_tvar (S n) (cons B Γ) (A ⟨ ↑ ⟩).
+| here_tvar A Δ : lookup_tvar 0 (A :: Δ) (A ⟨ ↑ ⟩) 
+| there_tvar n Δ A B : lookup_tvar n Δ A -> lookup_tvar (S n) (cons B Δ) (A ⟨ ↑ ⟩).
 
 Inductive lookup_var : nat -> list typ -> typ -> Prop :=
 | here_var A Γ : lookup_var 0 (A :: Γ) A 
