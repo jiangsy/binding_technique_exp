@@ -14,8 +14,8 @@ Inductive lookup_tvar : nat -> list typ -> typ -> Prop :=
 | there_tvar n Γ A B : lookup_tvar n Γ A -> lookup_tvar (S n) (cons B Γ) (A ⟨ ↑ ⟩).
 
 Inductive lookup_var : nat -> list typ -> typ -> Prop :=
-| here_var A Γ : lookup_var 0 (A :: Γ) (A ⟨ ↑ ⟩) 
-| there_var n Γ A B : lookup_var n Γ A -> lookup_var (S n) (cons B Γ) (A ⟨ ↑ ⟩).
+| here_var A Γ : lookup_var 0 (A :: Γ) A 
+| there_var n Γ A B : lookup_var n Γ A -> lookup_var (S n) (cons B Γ) A.
 
 Fixpoint wf_typ Δ A := match A with
   | typ_var X => exists B, lookup_tvar X Δ B

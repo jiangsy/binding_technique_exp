@@ -50,16 +50,16 @@ Inductive step : exp -> exp -> Prop :=
 | step_appl t t' s : 
   t ⤳ t' -> 
   exp_app t s ⤳ exp_app t' s
-| step_appr t s s' : 
+| step_appr t s s' :
   is_value t ->
   s ⤳ s' -> 
   exp_app t s ⤳ exp_app t s'
-| step_beta t s A : 
+| step_beta t s A :
   is_value s ->
   exp_app (exp_abs A t) s ⤳ t [typ_var; scons s exp_var]
 | step_tapp t t' A : 
   t ⤳ t' ->
   exp_tapp t A ⤳ exp_tapp t' A
-| step_inst t A: 
+| step_inst t A :
   exp_tapp (exp_tabs t) A ⤳ t [scons A typ_var; exp_var]
 where "t ⤳ t'" := (step t t').

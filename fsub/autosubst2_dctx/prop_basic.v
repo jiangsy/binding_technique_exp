@@ -36,7 +36,7 @@ Proof.
     use:wf_typ_renaming_tvar.
 Qed.
 
-Lemma sub_weakening_tvar  Δ Δ' A B ξ :
+Lemma sub_renaming_tvar Δ Δ' A B ξ :
   Δ ⊢ A <: B ->
   ctx_tvar_rename Δ Δ' ξ ->
   Δ' ⊢ A ⟨ ξ ⟩ <: B ⟨ ξ ⟩.
@@ -53,3 +53,71 @@ Proof.
     + replace (ren_typ (ξ >> S) A) with (A ⟨ξ⟩ ⟨S⟩) by (asimpl; auto).
       constructor; eauto.
 Qed.
+
+Corollary sub_weakening_tvar0 Δ A B C:
+  Δ ⊢ A <: B ->
+  (C :: Δ) ⊢ A ⟨↑⟩ <: B ⟨↑⟩.
+Proof.
+  hauto unfold:ctx_tvar_rename ctrs:subtyping use:sub_renaming_tvar.
+Qed.
+
+Lemma sub_wf_typ Δ A B :
+  Δ ⊢ A <: B ->
+  (Δ ⊢ A) /\ (Δ ⊢ B).
+Proof.
+  intros; induction H; try hauto.
+  - simpl; repeat split; try hauto.
+    replace (A2) with (A2 ⟨id⟩) by (asimpl; auto).
+    hauto unfold:ctx_tvar_rename_weak 
+      inv:lookup_tvar ctrs:lookup_tvar use:wf_typ_renaming_tvar.
+Qed.
+
+Corollary sub_wf_typ1 Δ A B :
+  Δ ⊢ A <: B ->
+  Δ ⊢ A.
+Proof.
+  hauto use:sub_wf_typ.
+Qed.
+
+Corollary sub_wf_typ2 Δ A B :
+  Δ ⊢ A <: B ->
+  Δ ⊢ B.
+Proof.
+  hauto use:sub_wf_typ.
+Qed.
+
+Definition ctx_var_rename Γ Γ' ξ ζ :=
+  forall x A, lookup_var x Γ A -> lookup_var (ζ x) Γ' (A ⟨ ξ ⟩).
+
+Lemma typing_renaming Δ Δ' Γ Γ' t A ξ ζ:
+  Δ ;; Γ ⊢ t : A ->
+  ctx_tvar_rename Δ Δ' ξ ->
+  ctx_var_rename Γ Γ' ξ ζ ->
+  Δ' ;; Γ' ⊢ t ⟨ξ;ζ⟩ : A ⟨ξ⟩.
+Proof.
+  move => H.
+  move : Δ' Γ' ξ ζ.
+  elim : Δ Γ t A / H; intros; asimpl;
+    try hauto unfold!:ctx_var_rename,ctx_tvar_rename use:typing.
+  - eapply typing_abs.
+    + hauto use:wf_typ_renaming_tvar unfold:ctx_tvar_rename_weak,ctx_tvar_rename.
+    + eapply H1; eauto.
+      hauto unfold:ctx_var_rename inv:lookup_var ctrs:lookup_var.
+  - eapply typing_tabs; asimpl; eauto.
+    + hauto use:wf_typ_renaming_tvar unfold:ctx_tvar_rename_weak,ctx_tvar_rename.
+    + eapply H1; eauto.
+      * unfold ctx_tvar_rename in *. intros. asimpl. 
+        inversion H4; subst.
+        -- asimpl. replace (ren_typ (ξ >> S) A) with (A ⟨ξ⟩ ⟨S⟩) by (asimpl; auto).
+           hauto inv:lookup_tvar ctrs:lookup_tvar.
+        -- asimpl. replace (ren_typ (ξ >> S) A0) with (A0 ⟨ξ⟩ ⟨S⟩) by (asimpl; auto).
+           hauto inv:lookup_tvar ctrs:lookup_tvar.
+      * unfold ctx_var_rename in *. intros. asimpl.
+        admit. 
+  - subst. asimpl. 
+    eapply typing_tapp with (A:=A ⟨ξ⟩) (B:=B ⟨up_ren ξ⟩); eauto.
+    + hauto use:sub_renaming_tvar ctrs:subtyping.
+    + asimpl. auto.
+  - eapply typing_sub; eauto.
+    eapply sub_renaming_tvar; eauto.
+Admitted.
