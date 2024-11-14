@@ -49,6 +49,7 @@ Fixpoint close_typ_wrt_typ_rec (n1 : nat) (X1 : typvar) (A1 : typ) {struct A1} :
   match A1 with
     | typ_var_f X2 => if (X1 == X2) then (typ_var_b n1) else (typ_var_f X2)
     | typ_var_b n2 => if (lt_ge_dec n2 n1) then (typ_var_b n2) else (typ_var_b (S n2))
+    | typ_top => typ_top
     | typ_arr A2 A3 => typ_arr (close_typ_wrt_typ_rec n1 X1 A2) (close_typ_wrt_typ_rec n1 X1 A3)
     | typ_all B1 A2 => typ_all (close_typ_wrt_typ_rec n1 X1 B1) (close_typ_wrt_typ_rec (S n1) X1 A2)
   end.
@@ -87,6 +88,7 @@ Fixpoint size_typ (A1 : typ) {struct A1} : nat :=
   match A1 with
     | typ_var_f X1 => 1
     | typ_var_b n1 => 1
+    | typ_top => 1
     | typ_arr A2 A3 => 1 + (size_typ A2) + (size_typ A3)
     | typ_all B1 A2 => 1 + (size_typ B1) + (size_typ A2)
   end.
@@ -119,6 +121,8 @@ Inductive degree_typ_wrt_typ : nat -> typ -> Prop :=
   | degree_wrt_typ_typ_var_b : forall n1 n2,
     lt n2 n1 ->
     degree_typ_wrt_typ n1 (typ_var_b n2)
+  | degree_wrt_typ_typ_top : forall n1,
+    degree_typ_wrt_typ n1 (typ_top)
   | degree_wrt_typ_typ_arr : forall n1 A1 A2,
     degree_typ_wrt_typ n1 A1 ->
     degree_typ_wrt_typ n1 A2 ->
@@ -195,6 +199,8 @@ Combined Scheme degree_exp_wrt_exp_mutind from degree_exp_wrt_exp_ind'.
 Inductive lc_set_typ : typ -> Set :=
   | lc_set_typ_var_f : forall X1,
     lc_set_typ (typ_var_f X1)
+  | lc_set_typ_top :
+    lc_set_typ (typ_top)
   | lc_set_typ_arr : forall A1 A2,
     lc_set_typ A1 ->
     lc_set_typ A2 ->

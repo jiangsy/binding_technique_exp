@@ -9,6 +9,7 @@ Definition expvar : Set := var.
 Inductive typ : Set := 
  | typ_var_b (_:nat)
  | typ_var_f (X:typvar)
+ | typ_top : typ
  | typ_arr (A1:typ) (A2:typ)
  | typ_all (B:typ) (A:typ).
 
@@ -39,6 +40,7 @@ Fixpoint open_typ_wrt_typ_rec (k:nat) (A_5:typ) (A__6:typ) {struct A__6}: typ :=
         | inright _ => typ_var_b (nat - 1)
       end
   | (typ_var_f X) => typ_var_f X
+  | typ_top => typ_top 
   | (typ_arr A1 A2) => typ_arr (open_typ_wrt_typ_rec k A_5 A1) (open_typ_wrt_typ_rec k A_5 A2)
   | (typ_all B A) => typ_all (open_typ_wrt_typ_rec k A_5 B) (open_typ_wrt_typ_rec (S k) A_5 A)
 end.
@@ -81,6 +83,8 @@ Definition open_typ_wrt_typ A_5 A__6 := open_typ_wrt_typ_rec 0 A__6 A_5.
 Inductive lc_typ : typ -> Prop :=    (* defn lc_typ *)
  | lc_typ_var_f : forall (X:typvar),
      (lc_typ (typ_var_f X))
+ | lc_typ_top : 
+     (lc_typ typ_top)
  | lc_typ_arr : forall (A1 A2:typ),
      (lc_typ A1) ->
      (lc_typ A2) ->
@@ -115,6 +119,7 @@ Fixpoint ftvar_in_typ (A_5:typ) : vars :=
   match A_5 with
   | (typ_var_b nat) => {}
   | (typ_var_f X) => {{X}}
+  | typ_top => {}
   | (typ_arr A1 A2) => (ftvar_in_typ A1) \u (ftvar_in_typ A2)
   | (typ_all B A) => (ftvar_in_typ B) \u (ftvar_in_typ A)
 end.
@@ -144,6 +149,7 @@ Fixpoint subst_typ_in_typ (A_5:typ) (X5:typvar) (A__6:typ) {struct A__6} : typ :
   match A__6 with
   | (typ_var_b nat) => typ_var_b nat
   | (typ_var_f X) => (if eq_var X X5 then A_5 else (typ_var_f X))
+  | typ_top => typ_top 
   | (typ_arr A1 A2) => typ_arr (subst_typ_in_typ A_5 X5 A1) (subst_typ_in_typ A_5 X5 A2)
   | (typ_all B A) => typ_all (subst_typ_in_typ A_5 X5 B) (subst_typ_in_typ A_5 X5 A)
 end.

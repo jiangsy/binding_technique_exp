@@ -5,6 +5,7 @@ grammar
 
 typ, A, B, C :: typ_ ::=
   | X                ::   :: var
+  | TOP              ::   :: top
   | A1 -> A2         ::   :: arr
   | ∀ ( X < B ) . A  ::   :: all  (+ bind X in A +)
   | ( A )            :: S :: paren {{ coq ([[A]]) }}

@@ -46,31 +46,57 @@ Inductive subtyping : ctx -> typ -> typ -> Prop :=
   Δ ⊢ (typ_all A1 A2) <: (typ_all B1 B2)
 where "Δ ⊢ A <: B" := (subtyping Δ A B).
 
-Reserved Notation "Δ ; Γ ⊢ t : A" 
+Reserved Notation "Δ ;; Γ ⊢ t : A" 
   (at level 99, Γ at next level, t at next level, no associativity).
 Inductive typing : ctx -> ctx -> exp -> typ -> Prop :=
 | typing_var Δ Γ i A :
   lookup i Γ A ->
-  Δ ; Γ ⊢ (exp_var i) : A
+  Δ ;; Γ ⊢ (exp_var i) : A
 | typing_abs Δ Γ t A B :
   Δ ⊢ A ->
-  Δ ; (A :: Γ) ⊢ t : B ->
-  Δ ; Γ ⊢ (exp_abs A t) : (typ_arr A B)
+  Δ ;; (A :: Γ) ⊢ t : B ->
+  Δ ;; Γ ⊢ (exp_abs A t) : (typ_arr A B)
 | typing_app Δ Γ s t A B :
-  Δ ; Γ ⊢ t : (typ_arr A B) ->
-  Δ ; Γ ⊢ s : A ->
-  Δ ; Γ ⊢ (exp_app t s) : B
+  Δ ;; Γ ⊢ t : (typ_arr A B) ->
+  Δ ;; Γ ⊢ s : A ->
+  Δ ;; Γ ⊢ (exp_app t s) : B
 | typing_tabs : forall Δ Γ t A B,
   Δ ⊢ A ->
-  (A :: Δ) ; (map (ren_typ ↑) Γ) ⊢ t : B ->
-  Δ ; Γ ⊢ (exp_tabs A t) : (typ_all A B)
+  (A :: Δ) ;; (map (ren_typ ↑) Γ) ⊢ t : B ->
+  Δ ;; Γ ⊢ (exp_tabs A t) : (typ_all A B)
 | typing_tapp : forall Δ Γ t A B A' B',
-  Δ ; Γ ⊢ t : (typ_all A B) ->
+  Δ ;; Γ ⊢ t : (typ_all A B) ->
   Δ ⊢ A' <: A ->
   B' = B [A'..] ->
-  Δ ; Γ ⊢ exp_tapp t A' : B'
+  Δ ;; Γ ⊢ exp_tapp t A' : B'
 | typing_sub : forall Δ Γ t A B,
-  Δ ; Γ ⊢ t : A ->
+  Δ ;; Γ ⊢ t : A ->
   Δ ⊢ A <: B ->
-  Δ ; Γ ⊢ t : B
-where "Δ ; Γ ⊢ t : A" := (typing Δ Γ t A).
+  Δ ;; Γ ⊢ t : B
+where "Δ ;; Γ ⊢ t : A" := (typing Δ Γ t A).
+
+Definition is_value (t : exp) : Prop :=
+  match t with
+  | exp_abs _ _ => True
+  | exp_tabs _ _ => True
+  | _ => False
+  end.
+
+Reserved Notation "t ⤳ t'" (at level 80).
+Inductive step : exp -> exp -> Prop :=
+| step_beta t s A :
+  is_value s ->
+  exp_app (exp_abs A t) s ⤳ t [typ_var ; scons s exp_var] 
+| step_inst t A B :
+  exp_tapp (exp_tabs A t) B ⤳ t [scons B typ_var; exp_var]
+| step_appl t t' s : 
+  t ⤳ t' -> 
+  exp_app t s ⤳ exp_app t' s
+| step_appr t s s' : 
+  is_value t ->
+  s ⤳ s' -> 
+  exp_app t s ⤳ exp_app t s'
+| step_tapp t t' A : 
+  t ⤳ t' ->
+  exp_tapp t A ⤳ exp_tapp t' A
+where "t ⤳ t'" := (step t t').
