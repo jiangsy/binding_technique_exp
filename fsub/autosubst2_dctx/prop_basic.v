@@ -17,6 +17,9 @@ Definition ctx_tvar_rename_weak Δ Δ' ξ :=
 Definition ctx_tvar_rename Δ Δ' ξ :=
   forall X B, lookup_tvar X Δ B -> lookup_tvar (ξ X) Δ' (B ⟨ ξ ⟩).
 
+Definition ctx_tvar_subst_wf Δ Δ' σ :=
+  forall X A, lookup_tvar X Δ A -> Δ' ⊢ σ X.
+
 Lemma ctx_tvar_rename_weak_rebounding Δ1 Δ2 A A':
   ctx_tvar_rename_weak (Δ2 ++ A :: Δ1)  (Δ2 ++ A' :: Δ1) id.
 Proof.
@@ -50,6 +53,19 @@ Corollary wf_typ_weakening_tvar0 Δ A B:
 Proof.
   hauto unfold:ctx_tvar_rename_weak inv:lookup_tvar ctrs:lookup_tvar
     use:wf_typ_renaming_tvar.
+Qed.
+
+
+Lemma wf_typ_subst_tvar Δ Δ' A σ:
+  Δ ⊢ A ->
+  ctx_tvar_subst_wf Δ Δ' σ ->
+  Δ' ⊢ A [ σ ].
+Proof.
+  move: Δ Δ' σ. induction A; intros; 
+    try hauto unfold:ctx_tvar_subst_wf.
+  - asimpl. simpl in *; split.
+    + hauto. 
+    + eapply IHA2; hauto unfold:ctx_tvar_subst_wf use:wf_typ_weakening_tvar0 inv:lookup_tvar. 
 Qed.
 
 Lemma sub_renaming_tvar Δ Δ' A B ξ :
