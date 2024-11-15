@@ -17,6 +17,13 @@ Definition ctx_tvar_rename_weak Δ Δ' ξ :=
 Definition ctx_tvar_rename Δ Δ' ξ :=
   forall X B, lookup_tvar X Δ B -> lookup_tvar (ξ X) Δ' (B ⟨ ξ ⟩).
 
+Lemma ctx_tvar_rename_weak_rebounding Δ1 Δ2 A A':
+  ctx_tvar_rename_weak (Δ2 ++ A :: Δ1)  (Δ2 ++ A' :: Δ1) id.
+Proof.
+  intros. induction Δ2; simpl;
+    hauto unfold:ctx_tvar_rename_weak inv:lookup_tvar ctrs:lookup_tvar.
+Qed.
+
 Lemma wf_typ_renaming_tvar Δ Δ' A ξ:
   Δ ⊢ A ->
   ctx_tvar_rename_weak Δ Δ' ξ ->
@@ -26,6 +33,15 @@ Proof.
   - intros. unfold ctx_tvar_rename_weak in *.
     asimpl. simpl in *. 
     hauto inv:lookup_tvar ctrs:lookup_tvar.
+Qed.
+
+Lemma wf_typ_renaming_tvar' Δ Δ' A A' ξ:
+  Δ ⊢ A ->
+  ctx_tvar_rename_weak Δ Δ' ξ ->
+  A' = A ⟨ ξ ⟩ ->
+  Δ' ⊢ A'.
+Proof.
+  intros. subst. eapply wf_typ_renaming_tvar; eauto.
 Qed.
 
 Corollary wf_typ_weakening_tvar0 Δ A B:
@@ -119,6 +135,7 @@ Proof.
   - eapply typing_tabs; asimpl; eauto.
     + hauto use:wf_typ_renaming_tvar unfold:ctx_tvar_rename_weak,ctx_tvar_rename.
     + eapply H1; eauto.
+      (* seems hard to fully automate the following proof *)
       * unfold ctx_tvar_rename in *. intros. asimpl. 
         inversion H4; subst.
         -- asimpl. replace (ren_typ (ξ >> S) A) with (A ⟨ξ⟩ ⟨S⟩) by (asimpl; auto).
@@ -138,4 +155,24 @@ Proof.
     + asimpl. auto.
   - eapply typing_sub; eauto.
     eapply sub_renaming_tvar; eauto.
+Qed.
+
+Corollary typing_weakening_tvar0 Δ Γ t A B:
+  Δ ;; Γ ⊢ t : A ->
+  (B :: Δ) ;; (map (ren_typ ↑) Γ) ⊢ t ⟨↑;id⟩ : A ⟨↑⟩.
+Proof.
+  intros. eapply typing_renaming; eauto.
+  - hauto unfold:ctx_tvar_rename use:lookup_tvar. 
+  - hauto unfold:ctx_var_rename use:lookup_map.
+Qed.
+
+Corollary typing_weakening_var0 Δ Γ t A B:
+  Δ ;; Γ ⊢ t : A ->
+  Δ ;; (B :: Γ) ⊢ t ⟨id;↑⟩ : A.
+Proof.
+  intros. replace (A) with (ren_typ id A) by (asimpl; auto). 
+    eapply typing_renaming; eauto.
+  - unfold ctx_tvar_rename. intros. asimpl. auto.
+  - unfold ctx_var_rename. intros. asimpl.
+    hauto ctrs:lookup_var.
 Qed.
