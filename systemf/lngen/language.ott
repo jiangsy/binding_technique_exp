@@ -20,6 +20,10 @@ exp, e, f, g :: exp_ ::=
   | { e2 / x } e1                       :: M :: subst1 {{ coq (open_exp_wrt_exp [[x e1]] [[e2]]) }}
   | { A2 / X } e1                       :: M :: subst2 {{ coq (open_exp_wrt_typ [[X e1]] [[A2]]) }}
 
+entry :: entry_ ::=
+  | A                                   ::    :: var 
+  | □                                   ::    :: tvar
+
 substitutions
   single A X :: subst_typ_in
   single e x :: subst_exp_in

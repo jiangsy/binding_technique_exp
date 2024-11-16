@@ -33,6 +33,14 @@ Scheme exp_rec' := Induction for exp Sort Set.
 
 Combined Scheme exp_mutrec from exp_rec'.
 
+Scheme entry_ind' := Induction for entry Sort Prop.
+
+Combined Scheme entry_mutind from entry_ind'.
+
+Scheme entry_rec' := Induction for entry Sort Set.
+
+Combined Scheme entry_mutrec from entry_rec'.
+
 
 (* *********************************************************************** *)
 (** * Close *)
@@ -71,6 +79,14 @@ Definition close_exp_wrt_typ X1 e1 := close_exp_wrt_typ_rec 0 X1 e1.
 
 Definition close_exp_wrt_exp x1 e1 := close_exp_wrt_exp_rec 0 x1 e1.
 
+Fixpoint close_entry_wrt_typ_rec (n1 : nat) (X1 : typvar) (entry1 : entry) {struct entry1} : entry :=
+  match entry1 with
+    | entry_var A1 => entry_var (close_typ_wrt_typ_rec n1 X1 A1)
+    | entry_tvar => entry_tvar
+  end.
+
+Definition close_entry_wrt_typ X1 entry1 := close_entry_wrt_typ_rec 0 X1 entry1.
+
 
 (* *********************************************************************** *)
 (** * Size *)
@@ -91,6 +107,12 @@ Fixpoint size_exp (e1 : exp) {struct e1} : nat :=
     | exp_app e2 e3 => 1 + (size_exp e2) + (size_exp e3)
     | exp_tabs e2 => 1 + (size_exp e2)
     | exp_tapp e2 A1 => 1 + (size_exp e2) + (size_typ A1)
+  end.
+
+Fixpoint size_entry (entry1 : entry) {struct entry1} : nat :=
+  match entry1 with
+    | entry_var A1 => 1 + (size_typ A1)
+    | entry_tvar => 1
   end.
 
 
@@ -172,6 +194,19 @@ Combined Scheme degree_exp_wrt_exp_mutind from degree_exp_wrt_exp_ind'.
 
 #[export] Hint Constructors degree_exp_wrt_exp : core lngen.
 
+Inductive degree_entry_wrt_typ : nat -> entry -> Prop :=
+  | degree_wrt_typ_entry_var : forall n1 A1,
+    degree_typ_wrt_typ n1 A1 ->
+    degree_entry_wrt_typ n1 (entry_var A1)
+  | degree_wrt_typ_entry_tvar : forall n1,
+    degree_entry_wrt_typ n1 (entry_tvar).
+
+Scheme degree_entry_wrt_typ_ind' := Induction for degree_entry_wrt_typ Sort Prop.
+
+Combined Scheme degree_entry_wrt_typ_mutind from degree_entry_wrt_typ_ind'.
+
+#[export] Hint Constructors degree_entry_wrt_typ : core lngen.
+
 
 (* *********************************************************************** *)
 (** * Local closure (version in [Set], induction principles) *)
@@ -236,6 +271,28 @@ Combined Scheme lc_set_exp_mutrec from lc_set_exp_rec'.
 
 #[export] Hint Constructors lc_set_exp : core lngen.
 
+Inductive lc_set_entry : entry -> Set :=
+  | lc_set_entry_var : forall A1,
+    lc_set_typ A1 ->
+    lc_set_entry (entry_var A1)
+  | lc_set_entry_tvar :
+    lc_set_entry (entry_tvar).
+Scheme lc_entry_ind' := Induction for lc_entry Sort Prop.
+
+Combined Scheme lc_entry_mutind from lc_entry_ind'.
+
+Scheme lc_set_entry_ind' := Induction for lc_set_entry Sort Prop.
+
+Combined Scheme lc_set_entry_mutind from lc_set_entry_ind'.
+
+Scheme lc_set_entry_rec' := Induction for lc_set_entry Sort Set.
+
+Combined Scheme lc_set_entry_mutrec from lc_set_entry_rec'.
+
+#[export] Hint Constructors lc_entry : core lngen.
+
+#[export] Hint Constructors lc_set_entry : core lngen.
+
 
 (* *********************************************************************** *)
 (** * Body *)
@@ -251,6 +308,10 @@ Definition body_exp_wrt_exp e1 := forall x1, lc_exp (open_exp_wrt_exp e1 (exp_va
 #[export] Hint Unfold body_exp_wrt_typ : core.
 
 #[export] Hint Unfold body_exp_wrt_exp : core.
+
+Definition body_entry_wrt_typ entry1 := forall X1, lc_entry (open_entry_wrt_typ entry1 (typ_var_f X1)).
+
+#[export] Hint Unfold body_entry_wrt_typ : core.
 
 
 (* *********************************************************************** *)
@@ -313,6 +374,25 @@ pose proof size_exp_min_mutual as H; intuition eauto.
 Qed.
 
 #[export] Hint Resolve size_exp_min : lngen.
+
+(* begin hide *)
+
+Lemma size_entry_min_mutual :
+(forall entry1, 1 <= size_entry entry1).
+Proof.
+apply_mutual_ind entry_mutind;
+default_simp.
+Qed.
+
+(* end hide *)
+
+Lemma size_entry_min :
+forall entry1, 1 <= size_entry entry1.
+Proof.
+pose proof size_entry_min_mutual as H; intuition eauto.
+Qed.
+
+#[export] Hint Resolve size_entry_min : lngen.
 
 (* begin hide *)
 
@@ -392,6 +472,32 @@ Qed.
 
 (* end hide *)
 
+(* begin hide *)
+
+Lemma size_entry_close_entry_wrt_typ_rec_mutual :
+(forall entry1 X1 n1,
+  size_entry (close_entry_wrt_typ_rec n1 X1 entry1) = size_entry entry1).
+Proof.
+apply_mutual_ind entry_mutind;
+default_simp.
+Qed.
+
+(* end hide *)
+
+(* begin hide *)
+
+Lemma size_entry_close_entry_wrt_typ_rec :
+forall entry1 X1 n1,
+  size_entry (close_entry_wrt_typ_rec n1 X1 entry1) = size_entry entry1.
+Proof.
+pose proof size_entry_close_entry_wrt_typ_rec_mutual as H; intuition eauto.
+Qed.
+
+#[export] Hint Resolve size_entry_close_entry_wrt_typ_rec : lngen.
+#[export] Hint Rewrite size_entry_close_entry_wrt_typ_rec using solve [auto] : lngen.
+
+(* end hide *)
+
 Lemma size_typ_close_typ_wrt_typ :
 forall A1 X1,
   size_typ (close_typ_wrt_typ X1 A1) = size_typ A1.
@@ -421,6 +527,16 @@ Qed.
 
 #[export] Hint Resolve size_exp_close_exp_wrt_exp : lngen.
 #[export] Hint Rewrite size_exp_close_exp_wrt_exp using solve [auto] : lngen.
+
+Lemma size_entry_close_entry_wrt_typ :
+forall entry1 X1,
+  size_entry (close_entry_wrt_typ X1 entry1) = size_entry entry1.
+Proof.
+unfold close_entry_wrt_typ; default_simp.
+Qed.
+
+#[export] Hint Resolve size_entry_close_entry_wrt_typ : lngen.
+#[export] Hint Rewrite size_entry_close_entry_wrt_typ using solve [auto] : lngen.
 
 (* begin hide *)
 
@@ -497,6 +613,31 @@ Qed.
 
 (* end hide *)
 
+(* begin hide *)
+
+Lemma size_entry_open_entry_wrt_typ_rec_mutual :
+(forall entry1 A1 n1,
+  size_entry entry1 <= size_entry (open_entry_wrt_typ_rec n1 A1 entry1)).
+Proof.
+apply_mutual_ind entry_mutind;
+default_simp.
+Qed.
+
+(* end hide *)
+
+(* begin hide *)
+
+Lemma size_entry_open_entry_wrt_typ_rec :
+forall entry1 A1 n1,
+  size_entry entry1 <= size_entry (open_entry_wrt_typ_rec n1 A1 entry1).
+Proof.
+pose proof size_entry_open_entry_wrt_typ_rec_mutual as H; intuition eauto.
+Qed.
+
+#[export] Hint Resolve size_entry_open_entry_wrt_typ_rec : lngen.
+
+(* end hide *)
+
 Lemma size_typ_open_typ_wrt_typ :
 forall A1 A2,
   size_typ A1 <= size_typ (open_typ_wrt_typ A1 A2).
@@ -523,6 +664,15 @@ unfold open_exp_wrt_exp; default_simp.
 Qed.
 
 #[export] Hint Resolve size_exp_open_exp_wrt_exp : lngen.
+
+Lemma size_entry_open_entry_wrt_typ :
+forall entry1 A1,
+  size_entry entry1 <= size_entry (open_entry_wrt_typ entry1 A1).
+Proof.
+unfold open_entry_wrt_typ; default_simp.
+Qed.
+
+#[export] Hint Resolve size_entry_open_entry_wrt_typ : lngen.
 
 (* begin hide *)
 
@@ -602,6 +752,32 @@ Qed.
 
 (* end hide *)
 
+(* begin hide *)
+
+Lemma size_entry_open_entry_wrt_typ_rec_var_mutual :
+(forall entry1 X1 n1,
+  size_entry (open_entry_wrt_typ_rec n1 (typ_var_f X1) entry1) = size_entry entry1).
+Proof.
+apply_mutual_ind entry_mutind;
+default_simp.
+Qed.
+
+(* end hide *)
+
+(* begin hide *)
+
+Lemma size_entry_open_entry_wrt_typ_rec_var :
+forall entry1 X1 n1,
+  size_entry (open_entry_wrt_typ_rec n1 (typ_var_f X1) entry1) = size_entry entry1.
+Proof.
+pose proof size_entry_open_entry_wrt_typ_rec_var_mutual as H; intuition eauto.
+Qed.
+
+#[export] Hint Resolve size_entry_open_entry_wrt_typ_rec_var : lngen.
+#[export] Hint Rewrite size_entry_open_entry_wrt_typ_rec_var using solve [auto] : lngen.
+
+(* end hide *)
+
 Lemma size_typ_open_typ_wrt_typ_var :
 forall A1 X1,
   size_typ (open_typ_wrt_typ A1 (typ_var_f X1)) = size_typ A1.
@@ -631,6 +807,16 @@ Qed.
 
 #[export] Hint Resolve size_exp_open_exp_wrt_exp_var : lngen.
 #[export] Hint Rewrite size_exp_open_exp_wrt_exp_var using solve [auto] : lngen.
+
+Lemma size_entry_open_entry_wrt_typ_var :
+forall entry1 X1,
+  size_entry (open_entry_wrt_typ entry1 (typ_var_f X1)) = size_entry entry1.
+Proof.
+unfold open_entry_wrt_typ; default_simp.
+Qed.
+
+#[export] Hint Resolve size_entry_open_entry_wrt_typ_var : lngen.
+#[export] Hint Rewrite size_entry_open_entry_wrt_typ_var using solve [auto] : lngen.
 
 
 (* *********************************************************************** *)
@@ -708,6 +894,29 @@ Qed.
 
 #[export] Hint Resolve degree_exp_wrt_exp_S : lngen.
 
+(* begin hide *)
+
+Lemma degree_entry_wrt_typ_S_mutual :
+(forall n1 entry1,
+  degree_entry_wrt_typ n1 entry1 ->
+  degree_entry_wrt_typ (S n1) entry1).
+Proof.
+apply_mutual_ind degree_entry_wrt_typ_mutind;
+default_simp.
+Qed.
+
+(* end hide *)
+
+Lemma degree_entry_wrt_typ_S :
+forall n1 entry1,
+  degree_entry_wrt_typ n1 entry1 ->
+  degree_entry_wrt_typ (S n1) entry1.
+Proof.
+pose proof degree_entry_wrt_typ_S_mutual as H; intuition eauto.
+Qed.
+
+#[export] Hint Resolve degree_entry_wrt_typ_S : lngen.
+
 Lemma degree_typ_wrt_typ_O :
 forall n1 A1,
   degree_typ_wrt_typ O A1 ->
@@ -737,6 +946,16 @@ induction n1; default_simp.
 Qed.
 
 #[export] Hint Resolve degree_exp_wrt_exp_O : lngen.
+
+Lemma degree_entry_wrt_typ_O :
+forall n1 entry1,
+  degree_entry_wrt_typ O entry1 ->
+  degree_entry_wrt_typ n1 entry1.
+Proof.
+induction n1; default_simp.
+Qed.
+
+#[export] Hint Resolve degree_entry_wrt_typ_O : lngen.
 
 (* begin hide *)
 
@@ -873,6 +1092,33 @@ Qed.
 
 (* end hide *)
 
+(* begin hide *)
+
+Lemma degree_entry_wrt_typ_close_entry_wrt_typ_rec_mutual :
+(forall entry1 X1 n1,
+  degree_entry_wrt_typ n1 entry1 ->
+  degree_entry_wrt_typ (S n1) (close_entry_wrt_typ_rec n1 X1 entry1)).
+Proof.
+apply_mutual_ind entry_mutind;
+default_simp.
+Qed.
+
+(* end hide *)
+
+(* begin hide *)
+
+Lemma degree_entry_wrt_typ_close_entry_wrt_typ_rec :
+forall entry1 X1 n1,
+  degree_entry_wrt_typ n1 entry1 ->
+  degree_entry_wrt_typ (S n1) (close_entry_wrt_typ_rec n1 X1 entry1).
+Proof.
+pose proof degree_entry_wrt_typ_close_entry_wrt_typ_rec_mutual as H; intuition eauto.
+Qed.
+
+#[export] Hint Resolve degree_entry_wrt_typ_close_entry_wrt_typ_rec : lngen.
+
+(* end hide *)
+
 Lemma degree_typ_wrt_typ_close_typ_wrt_typ :
 forall A1 X1,
   degree_typ_wrt_typ 0 A1 ->
@@ -922,6 +1168,16 @@ unfold close_exp_wrt_exp; default_simp.
 Qed.
 
 #[export] Hint Resolve degree_exp_wrt_exp_close_exp_wrt_exp : lngen.
+
+Lemma degree_entry_wrt_typ_close_entry_wrt_typ :
+forall entry1 X1,
+  degree_entry_wrt_typ 0 entry1 ->
+  degree_entry_wrt_typ 1 (close_entry_wrt_typ X1 entry1).
+Proof.
+unfold close_entry_wrt_typ; default_simp.
+Qed.
+
+#[export] Hint Resolve degree_entry_wrt_typ_close_entry_wrt_typ : lngen.
 
 (* begin hide *)
 
@@ -1058,6 +1314,33 @@ Qed.
 
 (* end hide *)
 
+(* begin hide *)
+
+Lemma degree_entry_wrt_typ_close_entry_wrt_typ_rec_inv_mutual :
+(forall entry1 X1 n1,
+  degree_entry_wrt_typ (S n1) (close_entry_wrt_typ_rec n1 X1 entry1) ->
+  degree_entry_wrt_typ n1 entry1).
+Proof.
+apply_mutual_ind entry_mutind;
+default_simp; eauto with lngen.
+Qed.
+
+(* end hide *)
+
+(* begin hide *)
+
+Lemma degree_entry_wrt_typ_close_entry_wrt_typ_rec_inv :
+forall entry1 X1 n1,
+  degree_entry_wrt_typ (S n1) (close_entry_wrt_typ_rec n1 X1 entry1) ->
+  degree_entry_wrt_typ n1 entry1.
+Proof.
+pose proof degree_entry_wrt_typ_close_entry_wrt_typ_rec_inv_mutual as H; intuition eauto.
+Qed.
+
+#[export] Hint Immediate degree_entry_wrt_typ_close_entry_wrt_typ_rec_inv : lngen.
+
+(* end hide *)
+
 Lemma degree_typ_wrt_typ_close_typ_wrt_typ_inv :
 forall A1 X1,
   degree_typ_wrt_typ 1 (close_typ_wrt_typ X1 A1) ->
@@ -1107,6 +1390,16 @@ unfold close_exp_wrt_exp; eauto with lngen.
 Qed.
 
 #[export] Hint Immediate degree_exp_wrt_exp_close_exp_wrt_exp_inv : lngen.
+
+Lemma degree_entry_wrt_typ_close_entry_wrt_typ_inv :
+forall entry1 X1,
+  degree_entry_wrt_typ 1 (close_entry_wrt_typ X1 entry1) ->
+  degree_entry_wrt_typ 0 entry1.
+Proof.
+unfold close_entry_wrt_typ; eauto with lngen.
+Qed.
+
+#[export] Hint Immediate degree_entry_wrt_typ_close_entry_wrt_typ_inv : lngen.
 
 (* begin hide *)
 
@@ -1251,6 +1544,35 @@ Qed.
 
 (* end hide *)
 
+(* begin hide *)
+
+Lemma degree_entry_wrt_typ_open_entry_wrt_typ_rec_mutual :
+(forall entry1 A1 n1,
+  degree_entry_wrt_typ (S n1) entry1 ->
+  degree_typ_wrt_typ n1 A1 ->
+  degree_entry_wrt_typ n1 (open_entry_wrt_typ_rec n1 A1 entry1)).
+Proof.
+apply_mutual_ind entry_mutind;
+default_simp.
+Qed.
+
+(* end hide *)
+
+(* begin hide *)
+
+Lemma degree_entry_wrt_typ_open_entry_wrt_typ_rec :
+forall entry1 A1 n1,
+  degree_entry_wrt_typ (S n1) entry1 ->
+  degree_typ_wrt_typ n1 A1 ->
+  degree_entry_wrt_typ n1 (open_entry_wrt_typ_rec n1 A1 entry1).
+Proof.
+pose proof degree_entry_wrt_typ_open_entry_wrt_typ_rec_mutual as H; intuition eauto.
+Qed.
+
+#[export] Hint Resolve degree_entry_wrt_typ_open_entry_wrt_typ_rec : lngen.
+
+(* end hide *)
+
 Lemma degree_typ_wrt_typ_open_typ_wrt_typ :
 forall A1 A2,
   degree_typ_wrt_typ 1 A1 ->
@@ -1304,6 +1626,17 @@ unfold open_exp_wrt_exp; default_simp.
 Qed.
 
 #[export] Hint Resolve degree_exp_wrt_exp_open_exp_wrt_exp : lngen.
+
+Lemma degree_entry_wrt_typ_open_entry_wrt_typ :
+forall entry1 A1,
+  degree_entry_wrt_typ 1 entry1 ->
+  degree_typ_wrt_typ 0 A1 ->
+  degree_entry_wrt_typ 0 (open_entry_wrt_typ entry1 A1).
+Proof.
+unfold open_entry_wrt_typ; default_simp.
+Qed.
+
+#[export] Hint Resolve degree_entry_wrt_typ_open_entry_wrt_typ : lngen.
 
 (* begin hide *)
 
@@ -1440,6 +1773,33 @@ Qed.
 
 (* end hide *)
 
+(* begin hide *)
+
+Lemma degree_entry_wrt_typ_open_entry_wrt_typ_rec_inv_mutual :
+(forall entry1 A1 n1,
+  degree_entry_wrt_typ n1 (open_entry_wrt_typ_rec n1 A1 entry1) ->
+  degree_entry_wrt_typ (S n1) entry1).
+Proof.
+apply_mutual_ind entry_mutind;
+default_simp; eauto with lngen.
+Qed.
+
+(* end hide *)
+
+(* begin hide *)
+
+Lemma degree_entry_wrt_typ_open_entry_wrt_typ_rec_inv :
+forall entry1 A1 n1,
+  degree_entry_wrt_typ n1 (open_entry_wrt_typ_rec n1 A1 entry1) ->
+  degree_entry_wrt_typ (S n1) entry1.
+Proof.
+pose proof degree_entry_wrt_typ_open_entry_wrt_typ_rec_inv_mutual as H; intuition eauto.
+Qed.
+
+#[export] Hint Immediate degree_entry_wrt_typ_open_entry_wrt_typ_rec_inv : lngen.
+
+(* end hide *)
+
 Lemma degree_typ_wrt_typ_open_typ_wrt_typ_inv :
 forall A1 A2,
   degree_typ_wrt_typ 0 (open_typ_wrt_typ A1 A2) ->
@@ -1489,6 +1849,16 @@ unfold open_exp_wrt_exp; eauto with lngen.
 Qed.
 
 #[export] Hint Immediate degree_exp_wrt_exp_open_exp_wrt_exp_inv : lngen.
+
+Lemma degree_entry_wrt_typ_open_entry_wrt_typ_inv :
+forall entry1 A1,
+  degree_entry_wrt_typ 0 (open_entry_wrt_typ entry1 A1) ->
+  degree_entry_wrt_typ 1 entry1.
+Proof.
+unfold open_entry_wrt_typ; eauto with lngen.
+Qed.
+
+#[export] Hint Immediate degree_entry_wrt_typ_open_entry_wrt_typ_inv : lngen.
 
 
 (* *********************************************************************** *)
@@ -1587,6 +1957,36 @@ Qed.
 
 (* end hide *)
 
+(* begin hide *)
+
+Lemma close_entry_wrt_typ_rec_inj_mutual :
+(forall entry1 entry2 X1 n1,
+  close_entry_wrt_typ_rec n1 X1 entry1 = close_entry_wrt_typ_rec n1 X1 entry2 ->
+  entry1 = entry2).
+Proof.
+apply_mutual_ind entry_mutind;
+intros; match goal with
+          | |- _ = ?term => destruct term
+        end;
+default_simp; eauto with lngen.
+Qed.
+
+(* end hide *)
+
+(* begin hide *)
+
+Lemma close_entry_wrt_typ_rec_inj :
+forall entry1 entry2 X1 n1,
+  close_entry_wrt_typ_rec n1 X1 entry1 = close_entry_wrt_typ_rec n1 X1 entry2 ->
+  entry1 = entry2.
+Proof.
+pose proof close_entry_wrt_typ_rec_inj_mutual as H; intuition eauto.
+Qed.
+
+#[export] Hint Immediate close_entry_wrt_typ_rec_inj : lngen.
+
+(* end hide *)
+
 Lemma close_typ_wrt_typ_inj :
 forall A1 A2 X1,
   close_typ_wrt_typ X1 A1 = close_typ_wrt_typ X1 A2 ->
@@ -1616,6 +2016,16 @@ unfold close_exp_wrt_exp; eauto with lngen.
 Qed.
 
 #[export] Hint Immediate close_exp_wrt_exp_inj : lngen.
+
+Lemma close_entry_wrt_typ_inj :
+forall entry1 entry2 X1,
+  close_entry_wrt_typ X1 entry1 = close_entry_wrt_typ X1 entry2 ->
+  entry1 = entry2.
+Proof.
+unfold close_entry_wrt_typ; eauto with lngen.
+Qed.
+
+#[export] Hint Immediate close_entry_wrt_typ_inj : lngen.
 
 (* begin hide *)
 
@@ -1701,6 +2111,34 @@ Qed.
 
 (* end hide *)
 
+(* begin hide *)
+
+Lemma close_entry_wrt_typ_rec_open_entry_wrt_typ_rec_mutual :
+(forall entry1 X1 n1,
+  X1 `notin` tvar_in_entry entry1 ->
+  close_entry_wrt_typ_rec n1 X1 (open_entry_wrt_typ_rec n1 (typ_var_f X1) entry1) = entry1).
+Proof.
+apply_mutual_ind entry_mutind;
+default_simp.
+Qed.
+
+(* end hide *)
+
+(* begin hide *)
+
+Lemma close_entry_wrt_typ_rec_open_entry_wrt_typ_rec :
+forall entry1 X1 n1,
+  X1 `notin` tvar_in_entry entry1 ->
+  close_entry_wrt_typ_rec n1 X1 (open_entry_wrt_typ_rec n1 (typ_var_f X1) entry1) = entry1.
+Proof.
+pose proof close_entry_wrt_typ_rec_open_entry_wrt_typ_rec_mutual as H; intuition eauto.
+Qed.
+
+#[export] Hint Resolve close_entry_wrt_typ_rec_open_entry_wrt_typ_rec : lngen.
+#[export] Hint Rewrite close_entry_wrt_typ_rec_open_entry_wrt_typ_rec using solve [auto] : lngen.
+
+(* end hide *)
+
 Lemma close_typ_wrt_typ_open_typ_wrt_typ :
 forall A1 X1,
   X1 `notin` tvar_in_typ A1 ->
@@ -1733,6 +2171,17 @@ Qed.
 
 #[export] Hint Resolve close_exp_wrt_exp_open_exp_wrt_exp : lngen.
 #[export] Hint Rewrite close_exp_wrt_exp_open_exp_wrt_exp using solve [auto] : lngen.
+
+Lemma close_entry_wrt_typ_open_entry_wrt_typ :
+forall entry1 X1,
+  X1 `notin` tvar_in_entry entry1 ->
+  close_entry_wrt_typ X1 (open_entry_wrt_typ entry1 (typ_var_f X1)) = entry1.
+Proof.
+unfold close_entry_wrt_typ; unfold open_entry_wrt_typ; default_simp.
+Qed.
+
+#[export] Hint Resolve close_entry_wrt_typ_open_entry_wrt_typ : lngen.
+#[export] Hint Rewrite close_entry_wrt_typ_open_entry_wrt_typ using solve [auto] : lngen.
 
 (* begin hide *)
 
@@ -1812,6 +2261,32 @@ Qed.
 
 (* end hide *)
 
+(* begin hide *)
+
+Lemma open_entry_wrt_typ_rec_close_entry_wrt_typ_rec_mutual :
+(forall entry1 X1 n1,
+  open_entry_wrt_typ_rec n1 (typ_var_f X1) (close_entry_wrt_typ_rec n1 X1 entry1) = entry1).
+Proof.
+apply_mutual_ind entry_mutind;
+default_simp.
+Qed.
+
+(* end hide *)
+
+(* begin hide *)
+
+Lemma open_entry_wrt_typ_rec_close_entry_wrt_typ_rec :
+forall entry1 X1 n1,
+  open_entry_wrt_typ_rec n1 (typ_var_f X1) (close_entry_wrt_typ_rec n1 X1 entry1) = entry1.
+Proof.
+pose proof open_entry_wrt_typ_rec_close_entry_wrt_typ_rec_mutual as H; intuition eauto.
+Qed.
+
+#[export] Hint Resolve open_entry_wrt_typ_rec_close_entry_wrt_typ_rec : lngen.
+#[export] Hint Rewrite open_entry_wrt_typ_rec_close_entry_wrt_typ_rec using solve [auto] : lngen.
+
+(* end hide *)
+
 Lemma open_typ_wrt_typ_close_typ_wrt_typ :
 forall A1 X1,
   open_typ_wrt_typ (close_typ_wrt_typ X1 A1) (typ_var_f X1) = A1.
@@ -1841,6 +2316,16 @@ Qed.
 
 #[export] Hint Resolve open_exp_wrt_exp_close_exp_wrt_exp : lngen.
 #[export] Hint Rewrite open_exp_wrt_exp_close_exp_wrt_exp using solve [auto] : lngen.
+
+Lemma open_entry_wrt_typ_close_entry_wrt_typ :
+forall entry1 X1,
+  open_entry_wrt_typ (close_entry_wrt_typ X1 entry1) (typ_var_f X1) = entry1.
+Proof.
+unfold close_entry_wrt_typ; unfold open_entry_wrt_typ; default_simp.
+Qed.
+
+#[export] Hint Resolve open_entry_wrt_typ_close_entry_wrt_typ : lngen.
+#[export] Hint Rewrite open_entry_wrt_typ_close_entry_wrt_typ using solve [auto] : lngen.
 
 (* begin hide *)
 
@@ -1944,6 +2429,40 @@ Qed.
 
 (* end hide *)
 
+(* begin hide *)
+
+Lemma open_entry_wrt_typ_rec_inj_mutual :
+(forall entry2 entry1 X1 n1,
+  X1 `notin` tvar_in_entry entry2 ->
+  X1 `notin` tvar_in_entry entry1 ->
+  open_entry_wrt_typ_rec n1 (typ_var_f X1) entry2 = open_entry_wrt_typ_rec n1 (typ_var_f X1) entry1 ->
+  entry2 = entry1).
+Proof.
+apply_mutual_ind entry_mutind;
+intros; match goal with
+          | |- _ = ?term => destruct term
+        end;
+default_simp; eauto with lngen.
+Qed.
+
+(* end hide *)
+
+(* begin hide *)
+
+Lemma open_entry_wrt_typ_rec_inj :
+forall entry2 entry1 X1 n1,
+  X1 `notin` tvar_in_entry entry2 ->
+  X1 `notin` tvar_in_entry entry1 ->
+  open_entry_wrt_typ_rec n1 (typ_var_f X1) entry2 = open_entry_wrt_typ_rec n1 (typ_var_f X1) entry1 ->
+  entry2 = entry1.
+Proof.
+pose proof open_entry_wrt_typ_rec_inj_mutual as H; intuition eauto.
+Qed.
+
+#[export] Hint Immediate open_entry_wrt_typ_rec_inj : lngen.
+
+(* end hide *)
+
 Lemma open_typ_wrt_typ_inj :
 forall A2 A1 X1,
   X1 `notin` tvar_in_typ A2 ->
@@ -1979,6 +2498,18 @@ unfold open_exp_wrt_exp; eauto with lngen.
 Qed.
 
 #[export] Hint Immediate open_exp_wrt_exp_inj : lngen.
+
+Lemma open_entry_wrt_typ_inj :
+forall entry2 entry1 X1,
+  X1 `notin` tvar_in_entry entry2 ->
+  X1 `notin` tvar_in_entry entry1 ->
+  open_entry_wrt_typ entry2 (typ_var_f X1) = open_entry_wrt_typ entry1 (typ_var_f X1) ->
+  entry2 = entry1.
+Proof.
+unfold open_entry_wrt_typ; eauto with lngen.
+Qed.
+
+#[export] Hint Immediate open_entry_wrt_typ_inj : lngen.
 
 
 (* *********************************************************************** *)
@@ -2075,6 +2606,34 @@ Qed.
 
 (* begin hide *)
 
+Lemma degree_entry_wrt_typ_of_lc_entry_mutual :
+(forall entry1,
+  lc_entry entry1 ->
+  degree_entry_wrt_typ 0 entry1).
+Proof.
+apply_mutual_ind lc_entry_mutind;
+intros;
+let X1 := fresh "X1" in pick_fresh X1;
+repeat (match goal with
+          | H1 : _, H2 : _ |- _ => specialize H1 with H2
+        end);
+default_simp; eauto with lngen.
+Qed.
+
+(* end hide *)
+
+Lemma degree_entry_wrt_typ_of_lc_entry :
+forall entry1,
+  lc_entry entry1 ->
+  degree_entry_wrt_typ 0 entry1.
+Proof.
+pose proof degree_entry_wrt_typ_of_lc_entry_mutual as H; intuition eauto.
+Qed.
+
+#[export] Hint Resolve degree_entry_wrt_typ_of_lc_entry : lngen.
+
+(* begin hide *)
+
 Lemma lc_typ_of_degree_size_mutual :
 forall i1,
 (forall A1,
@@ -2151,6 +2710,44 @@ Qed.
 
 #[export] Hint Resolve lc_exp_of_degree : lngen.
 
+(* begin hide *)
+
+Lemma lc_entry_of_degree_size_mutual :
+forall i1,
+(forall entry1,
+  size_entry entry1 = i1 ->
+  degree_entry_wrt_typ 0 entry1 ->
+  lc_entry entry1).
+Proof.
+intros i1; pattern i1; apply lt_wf_rec;
+clear i1; intros i1 H1;
+apply_mutual_ind entry_mutind;
+default_simp;
+(* non-trivial cases *)
+constructor; default_simp; eapply_first_lt_hyp;
+(* instantiate the size *)
+match goal with
+  | |- _ = _ => reflexivity
+  | _ => idtac
+end;
+(* everything should be easy now *)
+default_simp.
+Qed.
+
+(* end hide *)
+
+Lemma lc_entry_of_degree :
+forall entry1,
+  degree_entry_wrt_typ 0 entry1 ->
+  lc_entry entry1.
+Proof.
+intros entry1; intros;
+pose proof (lc_entry_of_degree_size_mutual (size_entry entry1));
+intuition eauto.
+Qed.
+
+#[export] Hint Resolve lc_entry_of_degree : lngen.
+
 Ltac typ_lc_exists_tac :=
   repeat (match goal with
             | H : _ |- _ =>
@@ -2162,6 +2759,12 @@ Ltac exp_lc_exists_tac :=
             | H : _ |- _ =>
               let J1 := fresh in pose proof H as J1; apply degree_exp_wrt_typ_of_lc_exp in J1;
               let J2 := fresh in pose proof H as J2; apply degree_exp_wrt_exp_of_lc_exp in J2; clear H
+          end).
+
+Ltac entry_lc_exists_tac :=
+  repeat (match goal with
+            | H : _ |- _ =>
+              let J1 := fresh in pose proof H as J1; apply degree_entry_wrt_typ_of_lc_entry in J1; clear H
           end).
 
 Lemma lc_typ_all_exists :
@@ -2255,6 +2858,23 @@ Qed.
 
 #[export] Hint Resolve lc_body_exp_wrt_exp : lngen.
 
+Lemma lc_body_entry_wrt_typ :
+forall entry1 A1,
+  body_entry_wrt_typ entry1 ->
+  lc_typ A1 ->
+  lc_entry (open_entry_wrt_typ entry1 A1).
+Proof.
+unfold body_entry_wrt_typ;
+default_simp;
+let X1 := fresh "x" in
+pick_fresh X1;
+specialize_all X1;
+entry_lc_exists_tac;
+eauto 7 with lngen.
+Qed.
+
+#[export] Hint Resolve lc_body_entry_wrt_typ : lngen.
+
 Lemma lc_body_typ_all_1 :
 forall A1,
   lc_typ (typ_all A1) ->
@@ -2331,6 +2951,28 @@ Qed.
 
 (* begin hide *)
 
+Lemma lc_entry_unique_mutual :
+(forall entry1 (proof2 proof3 : lc_entry entry1), proof2 = proof3).
+Proof.
+apply_mutual_ind lc_entry_mutind;
+intros;
+let proof1 := fresh "proof1" in
+rename_last_into proof1; dependent destruction proof1;
+f_equal; default_simp; auto using @functional_extensionality_dep with lngen.
+Qed.
+
+(* end hide *)
+
+Lemma lc_entry_unique :
+forall entry1 (proof2 proof3 : lc_entry entry1), proof2 = proof3.
+Proof.
+pose proof lc_entry_unique_mutual as H; intuition eauto.
+Qed.
+
+#[export] Hint Resolve lc_entry_unique : lngen.
+
+(* begin hide *)
+
 Lemma lc_typ_of_lc_set_typ_mutual :
 (forall A1, lc_set_typ A1 -> lc_typ A1).
 Proof.
@@ -2366,6 +3008,25 @@ pose proof lc_exp_of_lc_set_exp_mutual as H; intuition eauto.
 Qed.
 
 #[export] Hint Resolve lc_exp_of_lc_set_exp : lngen.
+
+(* begin hide *)
+
+Lemma lc_entry_of_lc_set_entry_mutual :
+(forall entry1, lc_set_entry entry1 -> lc_entry entry1).
+Proof.
+apply_mutual_ind lc_set_entry_mutind;
+default_simp.
+Qed.
+
+(* end hide *)
+
+Lemma lc_entry_of_lc_set_entry :
+forall entry1, lc_set_entry entry1 -> lc_entry entry1.
+Proof.
+pose proof lc_entry_of_lc_set_entry_mutual as H; intuition eauto.
+Qed.
+
+#[export] Hint Resolve lc_entry_of_lc_set_entry : lngen.
 
 (* begin hide *)
 
@@ -2449,6 +3110,48 @@ intuition eauto.
 Qed.
 
 #[export] Hint Resolve lc_set_exp_of_lc_exp : lngen.
+
+(* begin hide *)
+
+Lemma lc_set_entry_of_lc_entry_size_mutual :
+forall i1,
+(forall entry1,
+  size_entry entry1 = i1 ->
+  lc_entry entry1 ->
+  lc_set_entry entry1).
+Proof.
+intros i1; pattern i1; apply lt_wf_rec;
+clear i1; intros i1 H1;
+apply_mutual_ind entry_mutrec;
+default_simp;
+try solve [assert False by default_simp; tauto];
+(* non-trivial cases *)
+constructor; default_simp;
+try first [apply lc_set_typ_of_lc_typ
+ | apply lc_set_entry_of_lc_entry];
+default_simp; eapply_first_lt_hyp;
+(* instantiate the size *)
+match goal with
+  | |- _ = _ => reflexivity
+  | _ => idtac
+end;
+(* everything should be easy now *)
+default_simp.
+Qed.
+
+(* end hide *)
+
+Lemma lc_set_entry_of_lc_entry :
+forall entry1,
+  lc_entry entry1 ->
+  lc_set_entry entry1.
+Proof.
+intros entry1; intros;
+pose proof (lc_set_entry_of_lc_entry_size_mutual (size_entry entry1));
+intuition eauto.
+Qed.
+
+#[export] Hint Resolve lc_set_entry_of_lc_entry : lngen.
 
 
 (* *********************************************************************** *)
@@ -2547,6 +3250,36 @@ Qed.
 
 (* end hide *)
 
+(* begin hide *)
+
+Lemma close_entry_wrt_typ_rec_degree_entry_wrt_typ_mutual :
+(forall entry1 X1 n1,
+  degree_entry_wrt_typ n1 entry1 ->
+  X1 `notin` tvar_in_entry entry1 ->
+  close_entry_wrt_typ_rec n1 X1 entry1 = entry1).
+Proof.
+apply_mutual_ind entry_mutind;
+default_simp.
+Qed.
+
+(* end hide *)
+
+(* begin hide *)
+
+Lemma close_entry_wrt_typ_rec_degree_entry_wrt_typ :
+forall entry1 X1 n1,
+  degree_entry_wrt_typ n1 entry1 ->
+  X1 `notin` tvar_in_entry entry1 ->
+  close_entry_wrt_typ_rec n1 X1 entry1 = entry1.
+Proof.
+pose proof close_entry_wrt_typ_rec_degree_entry_wrt_typ_mutual as H; intuition eauto.
+Qed.
+
+#[export] Hint Resolve close_entry_wrt_typ_rec_degree_entry_wrt_typ : lngen.
+#[export] Hint Rewrite close_entry_wrt_typ_rec_degree_entry_wrt_typ using solve [auto] : lngen.
+
+(* end hide *)
+
 Lemma close_typ_wrt_typ_lc_typ :
 forall A1 X1,
   lc_typ A1 ->
@@ -2582,6 +3315,18 @@ Qed.
 
 #[export] Hint Resolve close_exp_wrt_exp_lc_exp : lngen.
 #[export] Hint Rewrite close_exp_wrt_exp_lc_exp using solve [auto] : lngen.
+
+Lemma close_entry_wrt_typ_lc_entry :
+forall entry1 X1,
+  lc_entry entry1 ->
+  X1 `notin` tvar_in_entry entry1 ->
+  close_entry_wrt_typ X1 entry1 = entry1.
+Proof.
+unfold close_entry_wrt_typ; default_simp.
+Qed.
+
+#[export] Hint Resolve close_entry_wrt_typ_lc_entry : lngen.
+#[export] Hint Rewrite close_entry_wrt_typ_lc_entry using solve [auto] : lngen.
 
 (* begin hide *)
 
@@ -2667,6 +3412,34 @@ Qed.
 
 (* end hide *)
 
+(* begin hide *)
+
+Lemma open_entry_wrt_typ_rec_degree_entry_wrt_typ_mutual :
+(forall entry1 A1 n1,
+  degree_entry_wrt_typ n1 entry1 ->
+  open_entry_wrt_typ_rec n1 A1 entry1 = entry1).
+Proof.
+apply_mutual_ind entry_mutind;
+default_simp.
+Qed.
+
+(* end hide *)
+
+(* begin hide *)
+
+Lemma open_entry_wrt_typ_rec_degree_entry_wrt_typ :
+forall entry1 A1 n1,
+  degree_entry_wrt_typ n1 entry1 ->
+  open_entry_wrt_typ_rec n1 A1 entry1 = entry1.
+Proof.
+pose proof open_entry_wrt_typ_rec_degree_entry_wrt_typ_mutual as H; intuition eauto.
+Qed.
+
+#[export] Hint Resolve open_entry_wrt_typ_rec_degree_entry_wrt_typ : lngen.
+#[export] Hint Rewrite open_entry_wrt_typ_rec_degree_entry_wrt_typ using solve [auto] : lngen.
+
+(* end hide *)
+
 Lemma open_typ_wrt_typ_lc_typ :
 forall A2 A1,
   lc_typ A2 ->
@@ -2699,6 +3472,17 @@ Qed.
 
 #[export] Hint Resolve open_exp_wrt_exp_lc_exp : lngen.
 #[export] Hint Rewrite open_exp_wrt_exp_lc_exp using solve [auto] : lngen.
+
+Lemma open_entry_wrt_typ_lc_entry :
+forall entry1 A1,
+  lc_entry entry1 ->
+  open_entry_wrt_typ entry1 A1 = entry1.
+Proof.
+unfold open_entry_wrt_typ; default_simp.
+Qed.
+
+#[export] Hint Resolve open_entry_wrt_typ_lc_entry : lngen.
+#[export] Hint Rewrite open_entry_wrt_typ_lc_entry using solve [auto] : lngen.
 
 
 (* *********************************************************************** *)
@@ -2837,6 +3621,32 @@ Qed.
 
 (* end hide *)
 
+(* begin hide *)
+
+Lemma tvar_in_entry_close_entry_wrt_typ_rec_mutual :
+(forall entry1 X1 n1,
+  tvar_in_entry (close_entry_wrt_typ_rec n1 X1 entry1) [=] remove X1 (tvar_in_entry entry1)).
+Proof.
+apply_mutual_ind entry_mutind;
+default_simp; fsetdec.
+Qed.
+
+(* end hide *)
+
+(* begin hide *)
+
+Lemma tvar_in_entry_close_entry_wrt_typ_rec :
+forall entry1 X1 n1,
+  tvar_in_entry (close_entry_wrt_typ_rec n1 X1 entry1) [=] remove X1 (tvar_in_entry entry1).
+Proof.
+pose proof tvar_in_entry_close_entry_wrt_typ_rec_mutual as H; intuition eauto.
+Qed.
+
+#[export] Hint Resolve tvar_in_entry_close_entry_wrt_typ_rec : lngen.
+#[export] Hint Rewrite tvar_in_entry_close_entry_wrt_typ_rec using solve [auto] : lngen.
+
+(* end hide *)
+
 Lemma tvar_in_typ_close_typ_wrt_typ :
 forall A1 X1,
   tvar_in_typ (close_typ_wrt_typ X1 A1) [=] remove X1 (tvar_in_typ A1).
@@ -2886,6 +3696,16 @@ Qed.
 
 #[export] Hint Resolve var_in_exp_close_exp_wrt_exp : lngen.
 #[export] Hint Rewrite var_in_exp_close_exp_wrt_exp using solve [auto] : lngen.
+
+Lemma tvar_in_entry_close_entry_wrt_typ :
+forall entry1 X1,
+  tvar_in_entry (close_entry_wrt_typ X1 entry1) [=] remove X1 (tvar_in_entry entry1).
+Proof.
+unfold close_entry_wrt_typ; default_simp.
+Qed.
+
+#[export] Hint Resolve tvar_in_entry_close_entry_wrt_typ : lngen.
+#[export] Hint Rewrite tvar_in_entry_close_entry_wrt_typ using solve [auto] : lngen.
 
 (* begin hide *)
 
@@ -3012,6 +3832,31 @@ Qed.
 
 (* end hide *)
 
+(* begin hide *)
+
+Lemma tvar_in_entry_open_entry_wrt_typ_rec_lower_mutual :
+(forall entry1 A1 n1,
+  tvar_in_entry entry1 [<=] tvar_in_entry (open_entry_wrt_typ_rec n1 A1 entry1)).
+Proof.
+apply_mutual_ind entry_mutind;
+default_simp; fsetdec.
+Qed.
+
+(* end hide *)
+
+(* begin hide *)
+
+Lemma tvar_in_entry_open_entry_wrt_typ_rec_lower :
+forall entry1 A1 n1,
+  tvar_in_entry entry1 [<=] tvar_in_entry (open_entry_wrt_typ_rec n1 A1 entry1).
+Proof.
+pose proof tvar_in_entry_open_entry_wrt_typ_rec_lower_mutual as H; intuition eauto.
+Qed.
+
+#[export] Hint Resolve tvar_in_entry_open_entry_wrt_typ_rec_lower : lngen.
+
+(* end hide *)
+
 Lemma tvar_in_typ_open_typ_wrt_typ_lower :
 forall A1 A2,
   tvar_in_typ A1 [<=] tvar_in_typ (open_typ_wrt_typ A1 A2).
@@ -3056,6 +3901,15 @@ unfold open_exp_wrt_exp; default_simp.
 Qed.
 
 #[export] Hint Resolve var_in_exp_open_exp_wrt_exp_lower : lngen.
+
+Lemma tvar_in_entry_open_entry_wrt_typ_lower :
+forall entry1 A1,
+  tvar_in_entry entry1 [<=] tvar_in_entry (open_entry_wrt_typ entry1 A1).
+Proof.
+unfold open_entry_wrt_typ; default_simp.
+Qed.
+
+#[export] Hint Resolve tvar_in_entry_open_entry_wrt_typ_lower : lngen.
 
 (* begin hide *)
 
@@ -3182,6 +4036,31 @@ Qed.
 
 (* end hide *)
 
+(* begin hide *)
+
+Lemma tvar_in_entry_open_entry_wrt_typ_rec_upper_mutual :
+(forall entry1 A1 n1,
+  tvar_in_entry (open_entry_wrt_typ_rec n1 A1 entry1) [<=] tvar_in_typ A1 `union` tvar_in_entry entry1).
+Proof.
+apply_mutual_ind entry_mutind;
+default_simp; fsetdec.
+Qed.
+
+(* end hide *)
+
+(* begin hide *)
+
+Lemma tvar_in_entry_open_entry_wrt_typ_rec_upper :
+forall entry1 A1 n1,
+  tvar_in_entry (open_entry_wrt_typ_rec n1 A1 entry1) [<=] tvar_in_typ A1 `union` tvar_in_entry entry1.
+Proof.
+pose proof tvar_in_entry_open_entry_wrt_typ_rec_upper_mutual as H; intuition eauto.
+Qed.
+
+#[export] Hint Resolve tvar_in_entry_open_entry_wrt_typ_rec_upper : lngen.
+
+(* end hide *)
+
 Lemma tvar_in_typ_open_typ_wrt_typ_upper :
 forall A1 A2,
   tvar_in_typ (open_typ_wrt_typ A1 A2) [<=] tvar_in_typ A2 `union` tvar_in_typ A1.
@@ -3226,6 +4105,15 @@ unfold open_exp_wrt_exp; default_simp.
 Qed.
 
 #[export] Hint Resolve var_in_exp_open_exp_wrt_exp_upper : lngen.
+
+Lemma tvar_in_entry_open_entry_wrt_typ_upper :
+forall entry1 A1,
+  tvar_in_entry (open_entry_wrt_typ entry1 A1) [<=] tvar_in_typ A1 `union` tvar_in_entry entry1.
+Proof.
+unfold open_entry_wrt_typ; default_simp.
+Qed.
+
+#[export] Hint Resolve tvar_in_entry_open_entry_wrt_typ_upper : lngen.
 
 (* begin hide *)
 
@@ -3320,6 +4208,30 @@ Qed.
 
 #[export] Hint Resolve var_in_exp_subst_exp_in_exp_fresh : lngen.
 #[export] Hint Rewrite var_in_exp_subst_exp_in_exp_fresh using solve [auto] : lngen.
+
+(* begin hide *)
+
+Lemma tvar_in_entry_subst_typ_in_entry_fresh_mutual :
+(forall entry1 A1 X1,
+  X1 `notin` tvar_in_entry entry1 ->
+  tvar_in_entry (subst_typ_in_entry A1 X1 entry1) [=] tvar_in_entry entry1).
+Proof.
+apply_mutual_ind entry_mutind;
+default_simp; fsetdec.
+Qed.
+
+(* end hide *)
+
+Lemma tvar_in_entry_subst_typ_in_entry_fresh :
+forall entry1 A1 X1,
+  X1 `notin` tvar_in_entry entry1 ->
+  tvar_in_entry (subst_typ_in_entry A1 X1 entry1) [=] tvar_in_entry entry1.
+Proof.
+pose proof tvar_in_entry_subst_typ_in_entry_fresh_mutual as H; intuition eauto.
+Qed.
+
+#[export] Hint Resolve tvar_in_entry_subst_typ_in_entry_fresh : lngen.
+#[export] Hint Rewrite tvar_in_entry_subst_typ_in_entry_fresh using solve [auto] : lngen.
 
 (* begin hide *)
 
@@ -3425,6 +4337,27 @@ pose proof var_in_exp_subst_exp_in_exp_lower_mutual as H; intuition eauto.
 Qed.
 
 #[export] Hint Resolve var_in_exp_subst_exp_in_exp_lower : lngen.
+
+(* begin hide *)
+
+Lemma tvar_in_entry_subst_typ_in_entry_lower_mutual :
+(forall entry1 A1 X1,
+  remove X1 (tvar_in_entry entry1) [<=] tvar_in_entry (subst_typ_in_entry A1 X1 entry1)).
+Proof.
+apply_mutual_ind entry_mutind;
+default_simp; fsetdec.
+Qed.
+
+(* end hide *)
+
+Lemma tvar_in_entry_subst_typ_in_entry_lower :
+forall entry1 A1 X1,
+  remove X1 (tvar_in_entry entry1) [<=] tvar_in_entry (subst_typ_in_entry A1 X1 entry1).
+Proof.
+pose proof tvar_in_entry_subst_typ_in_entry_lower_mutual as H; intuition eauto.
+Qed.
+
+#[export] Hint Resolve tvar_in_entry_subst_typ_in_entry_lower : lngen.
 
 (* begin hide *)
 
@@ -3551,6 +4484,31 @@ Qed.
 
 (* begin hide *)
 
+Lemma tvar_in_entry_subst_typ_in_entry_notin_mutual :
+(forall entry1 A1 X1 X2,
+  X2 `notin` tvar_in_entry entry1 ->
+  X2 `notin` tvar_in_typ A1 ->
+  X2 `notin` tvar_in_entry (subst_typ_in_entry A1 X1 entry1)).
+Proof.
+apply_mutual_ind entry_mutind;
+default_simp; fsetdec.
+Qed.
+
+(* end hide *)
+
+Lemma tvar_in_entry_subst_typ_in_entry_notin :
+forall entry1 A1 X1 X2,
+  X2 `notin` tvar_in_entry entry1 ->
+  X2 `notin` tvar_in_typ A1 ->
+  X2 `notin` tvar_in_entry (subst_typ_in_entry A1 X1 entry1).
+Proof.
+pose proof tvar_in_entry_subst_typ_in_entry_notin_mutual as H; intuition eauto.
+Qed.
+
+#[export] Hint Resolve tvar_in_entry_subst_typ_in_entry_notin : lngen.
+
+(* begin hide *)
+
 Lemma tvar_in_typ_subst_typ_in_typ_upper_mutual :
 (forall A1 A2 X1,
   tvar_in_typ (subst_typ_in_typ A2 X1 A1) [<=] tvar_in_typ A2 `union` remove X1 (tvar_in_typ A1)).
@@ -3653,6 +4611,27 @@ pose proof var_in_exp_subst_exp_in_exp_upper_mutual as H; intuition eauto.
 Qed.
 
 #[export] Hint Resolve var_in_exp_subst_exp_in_exp_upper : lngen.
+
+(* begin hide *)
+
+Lemma tvar_in_entry_subst_typ_in_entry_upper_mutual :
+(forall entry1 A1 X1,
+  tvar_in_entry (subst_typ_in_entry A1 X1 entry1) [<=] tvar_in_typ A1 `union` remove X1 (tvar_in_entry entry1)).
+Proof.
+apply_mutual_ind entry_mutind;
+default_simp; fsetdec.
+Qed.
+
+(* end hide *)
+
+Lemma tvar_in_entry_subst_typ_in_entry_upper :
+forall entry1 A1 X1,
+  tvar_in_entry (subst_typ_in_entry A1 X1 entry1) [<=] tvar_in_typ A1 `union` remove X1 (tvar_in_entry entry1).
+Proof.
+pose proof tvar_in_entry_subst_typ_in_entry_upper_mutual as H; intuition eauto.
+Qed.
+
+#[export] Hint Resolve tvar_in_entry_subst_typ_in_entry_upper : lngen.
 
 
 (* *********************************************************************** *)
@@ -3788,6 +4767,33 @@ Qed.
 
 #[export] Hint Resolve subst_exp_in_exp_close_exp_wrt_exp_rec : lngen.
 
+(* begin hide *)
+
+Lemma subst_typ_in_entry_close_entry_wrt_typ_rec_mutual :
+(forall entry1 A1 X1 X2 n1,
+  degree_typ_wrt_typ n1 A1 ->
+  X1 <> X2 ->
+  X2 `notin` tvar_in_typ A1 ->
+  subst_typ_in_entry A1 X1 (close_entry_wrt_typ_rec n1 X2 entry1) = close_entry_wrt_typ_rec n1 X2 (subst_typ_in_entry A1 X1 entry1)).
+Proof.
+apply_mutual_ind entry_mutind;
+default_simp.
+Qed.
+
+(* end hide *)
+
+Lemma subst_typ_in_entry_close_entry_wrt_typ_rec :
+forall entry1 A1 X1 X2 n1,
+  degree_typ_wrt_typ n1 A1 ->
+  X1 <> X2 ->
+  X2 `notin` tvar_in_typ A1 ->
+  subst_typ_in_entry A1 X1 (close_entry_wrt_typ_rec n1 X2 entry1) = close_entry_wrt_typ_rec n1 X2 (subst_typ_in_entry A1 X1 entry1).
+Proof.
+pose proof subst_typ_in_entry_close_entry_wrt_typ_rec_mutual as H; intuition eauto.
+Qed.
+
+#[export] Hint Resolve subst_typ_in_entry_close_entry_wrt_typ_rec : lngen.
+
 Lemma subst_typ_in_typ_close_typ_wrt_typ :
 forall A2 A1 X1 X2,
   lc_typ A1 ->  X1 <> X2 ->
@@ -3839,6 +4845,17 @@ unfold close_exp_wrt_exp; default_simp.
 Qed.
 
 #[export] Hint Resolve subst_exp_in_exp_close_exp_wrt_exp : lngen.
+
+Lemma subst_typ_in_entry_close_entry_wrt_typ :
+forall entry1 A1 X1 X2,
+  lc_typ A1 ->  X1 <> X2 ->
+  X2 `notin` tvar_in_typ A1 ->
+  subst_typ_in_entry A1 X1 (close_entry_wrt_typ X2 entry1) = close_entry_wrt_typ X2 (subst_typ_in_entry A1 X1 entry1).
+Proof.
+unfold close_entry_wrt_typ; default_simp.
+Qed.
+
+#[export] Hint Resolve subst_typ_in_entry_close_entry_wrt_typ : lngen.
 
 (* begin hide *)
 
@@ -3965,6 +4982,31 @@ Qed.
 
 (* begin hide *)
 
+Lemma subst_typ_in_entry_degree_entry_wrt_typ_mutual :
+(forall entry1 A1 X1 n1,
+  degree_entry_wrt_typ n1 entry1 ->
+  degree_typ_wrt_typ n1 A1 ->
+  degree_entry_wrt_typ n1 (subst_typ_in_entry A1 X1 entry1)).
+Proof.
+apply_mutual_ind entry_mutind;
+default_simp.
+Qed.
+
+(* end hide *)
+
+Lemma subst_typ_in_entry_degree_entry_wrt_typ :
+forall entry1 A1 X1 n1,
+  degree_entry_wrt_typ n1 entry1 ->
+  degree_typ_wrt_typ n1 A1 ->
+  degree_entry_wrt_typ n1 (subst_typ_in_entry A1 X1 entry1).
+Proof.
+pose proof subst_typ_in_entry_degree_entry_wrt_typ_mutual as H; intuition eauto.
+Qed.
+
+#[export] Hint Resolve subst_typ_in_entry_degree_entry_wrt_typ : lngen.
+
+(* begin hide *)
+
 Lemma subst_typ_in_typ_fresh_eq_mutual :
 (forall A2 A1 X1,
   X1 `notin` tvar_in_typ A2 ->
@@ -4037,6 +5079,30 @@ Qed.
 
 (* begin hide *)
 
+Lemma subst_typ_in_entry_fresh_eq_mutual :
+(forall entry1 A1 X1,
+  X1 `notin` tvar_in_entry entry1 ->
+  subst_typ_in_entry A1 X1 entry1 = entry1).
+Proof.
+apply_mutual_ind entry_mutind;
+default_simp.
+Qed.
+
+(* end hide *)
+
+Lemma subst_typ_in_entry_fresh_eq :
+forall entry1 A1 X1,
+  X1 `notin` tvar_in_entry entry1 ->
+  subst_typ_in_entry A1 X1 entry1 = entry1.
+Proof.
+pose proof subst_typ_in_entry_fresh_eq_mutual as H; intuition eauto.
+Qed.
+
+#[export] Hint Resolve subst_typ_in_entry_fresh_eq : lngen.
+#[export] Hint Rewrite subst_typ_in_entry_fresh_eq using solve [auto] : lngen.
+
+(* begin hide *)
+
 Lemma subst_typ_in_typ_fresh_same_mutual :
 (forall A2 A1 X1,
   X1 `notin` tvar_in_typ A1 ->
@@ -4103,6 +5169,29 @@ pose proof subst_exp_in_exp_fresh_same_mutual as H; intuition eauto.
 Qed.
 
 #[export] Hint Resolve subst_exp_in_exp_fresh_same : lngen.
+
+(* begin hide *)
+
+Lemma subst_typ_in_entry_fresh_same_mutual :
+(forall entry1 A1 X1,
+  X1 `notin` tvar_in_typ A1 ->
+  X1 `notin` tvar_in_entry (subst_typ_in_entry A1 X1 entry1)).
+Proof.
+apply_mutual_ind entry_mutind;
+default_simp.
+Qed.
+
+(* end hide *)
+
+Lemma subst_typ_in_entry_fresh_same :
+forall entry1 A1 X1,
+  X1 `notin` tvar_in_typ A1 ->
+  X1 `notin` tvar_in_entry (subst_typ_in_entry A1 X1 entry1).
+Proof.
+pose proof subst_typ_in_entry_fresh_same_mutual as H; intuition eauto.
+Qed.
+
+#[export] Hint Resolve subst_typ_in_entry_fresh_same : lngen.
 
 (* begin hide *)
 
@@ -4179,6 +5268,31 @@ Qed.
 
 #[export] Hint Resolve subst_exp_in_exp_fresh : lngen.
 
+(* begin hide *)
+
+Lemma subst_typ_in_entry_fresh_mutual :
+(forall entry1 A1 X1 X2,
+  X1 `notin` tvar_in_entry entry1 ->
+  X1 `notin` tvar_in_typ A1 ->
+  X1 `notin` tvar_in_entry (subst_typ_in_entry A1 X2 entry1)).
+Proof.
+apply_mutual_ind entry_mutind;
+default_simp.
+Qed.
+
+(* end hide *)
+
+Lemma subst_typ_in_entry_fresh :
+forall entry1 A1 X1 X2,
+  X1 `notin` tvar_in_entry entry1 ->
+  X1 `notin` tvar_in_typ A1 ->
+  X1 `notin` tvar_in_entry (subst_typ_in_entry A1 X2 entry1).
+Proof.
+pose proof subst_typ_in_entry_fresh_mutual as H; intuition eauto.
+Qed.
+
+#[export] Hint Resolve subst_typ_in_entry_fresh : lngen.
+
 Lemma subst_typ_in_typ_lc_typ :
 forall A1 A2 X1,
   lc_typ A1 ->
@@ -4211,6 +5325,17 @@ default_simp.
 Qed.
 
 #[export] Hint Resolve subst_exp_in_exp_lc_exp : lngen.
+
+Lemma subst_typ_in_entry_lc_entry :
+forall entry1 A1 X1,
+  lc_entry entry1 ->
+  lc_typ A1 ->
+  lc_entry (subst_typ_in_entry A1 X1 entry1).
+Proof.
+default_simp.
+Qed.
+
+#[export] Hint Resolve subst_typ_in_entry_lc_entry : lngen.
 
 (* begin hide *)
 
@@ -4345,6 +5470,33 @@ Qed.
 
 (* end hide *)
 
+(* begin hide *)
+
+Lemma subst_typ_in_entry_open_entry_wrt_typ_rec_mutual :
+(forall entry1 A1 A2 X1 n1,
+  lc_typ A1 ->
+  subst_typ_in_entry A1 X1 (open_entry_wrt_typ_rec n1 A2 entry1) = open_entry_wrt_typ_rec n1 (subst_typ_in_typ A1 X1 A2) (subst_typ_in_entry A1 X1 entry1)).
+Proof.
+apply_mutual_ind entry_mutind;
+default_simp.
+Qed.
+
+(* end hide *)
+
+(* begin hide *)
+
+Lemma subst_typ_in_entry_open_entry_wrt_typ_rec :
+forall entry1 A1 A2 X1 n1,
+  lc_typ A1 ->
+  subst_typ_in_entry A1 X1 (open_entry_wrt_typ_rec n1 A2 entry1) = open_entry_wrt_typ_rec n1 (subst_typ_in_typ A1 X1 A2) (subst_typ_in_entry A1 X1 entry1).
+Proof.
+pose proof subst_typ_in_entry_open_entry_wrt_typ_rec_mutual as H; intuition eauto.
+Qed.
+
+#[export] Hint Resolve subst_typ_in_entry_open_entry_wrt_typ_rec : lngen.
+
+(* end hide *)
+
 Lemma subst_typ_in_typ_open_typ_wrt_typ :
 forall A3 A1 A2 X1,
   lc_typ A1 ->
@@ -4393,6 +5545,16 @@ unfold open_exp_wrt_exp; default_simp.
 Qed.
 
 #[export] Hint Resolve subst_exp_in_exp_open_exp_wrt_exp : lngen.
+
+Lemma subst_typ_in_entry_open_entry_wrt_typ :
+forall entry1 A1 A2 X1,
+  lc_typ A1 ->
+  subst_typ_in_entry A1 X1 (open_entry_wrt_typ entry1 A2) = open_entry_wrt_typ (subst_typ_in_entry A1 X1 entry1) (subst_typ_in_typ A1 X1 A2).
+Proof.
+unfold open_entry_wrt_typ; default_simp.
+Qed.
+
+#[export] Hint Resolve subst_typ_in_entry_open_entry_wrt_typ : lngen.
 
 Lemma subst_typ_in_typ_open_typ_wrt_typ_var :
 forall A2 A1 X1 X2,
@@ -4445,6 +5607,17 @@ intros; rewrite subst_exp_in_exp_open_exp_wrt_exp; default_simp.
 Qed.
 
 #[export] Hint Resolve subst_exp_in_exp_open_exp_wrt_exp_var : lngen.
+
+Lemma subst_typ_in_entry_open_entry_wrt_typ_var :
+forall entry1 A1 X1 X2,
+  X1 <> X2 ->
+  lc_typ A1 ->
+  open_entry_wrt_typ (subst_typ_in_entry A1 X1 entry1) (typ_var_f X2) = subst_typ_in_entry A1 X1 (open_entry_wrt_typ entry1 (typ_var_f X2)).
+Proof.
+intros; rewrite subst_typ_in_entry_open_entry_wrt_typ; default_simp.
+Qed.
+
+#[export] Hint Resolve subst_typ_in_entry_open_entry_wrt_typ_var : lngen.
 
 (* begin hide *)
 
@@ -4521,6 +5694,31 @@ Qed.
 
 (* end hide *)
 
+(* begin hide *)
+
+Lemma subst_typ_in_entry_spec_rec_mutual :
+(forall entry1 A1 X1 n1,
+  subst_typ_in_entry A1 X1 entry1 = open_entry_wrt_typ_rec n1 A1 (close_entry_wrt_typ_rec n1 X1 entry1)).
+Proof.
+apply_mutual_ind entry_mutind;
+default_simp.
+Qed.
+
+(* end hide *)
+
+(* begin hide *)
+
+Lemma subst_typ_in_entry_spec_rec :
+forall entry1 A1 X1 n1,
+  subst_typ_in_entry A1 X1 entry1 = open_entry_wrt_typ_rec n1 A1 (close_entry_wrt_typ_rec n1 X1 entry1).
+Proof.
+pose proof subst_typ_in_entry_spec_rec_mutual as H; intuition eauto.
+Qed.
+
+#[export] Hint Resolve subst_typ_in_entry_spec_rec : lngen.
+
+(* end hide *)
+
 Lemma subst_typ_in_typ_spec :
 forall A1 A2 X1,
   subst_typ_in_typ A2 X1 A1 = open_typ_wrt_typ (close_typ_wrt_typ X1 A1) A2.
@@ -4547,6 +5745,15 @@ unfold close_exp_wrt_exp; unfold open_exp_wrt_exp; default_simp.
 Qed.
 
 #[export] Hint Resolve subst_exp_in_exp_spec : lngen.
+
+Lemma subst_typ_in_entry_spec :
+forall entry1 A1 X1,
+  subst_typ_in_entry A1 X1 entry1 = open_entry_wrt_typ (close_entry_wrt_typ X1 entry1) A1.
+Proof.
+unfold close_entry_wrt_typ; unfold open_entry_wrt_typ; default_simp.
+Qed.
+
+#[export] Hint Resolve subst_typ_in_entry_spec : lngen.
 
 (* begin hide *)
 
@@ -4666,6 +5873,31 @@ pose proof subst_exp_in_exp_subst_exp_in_exp_mutual as H; intuition eauto.
 Qed.
 
 #[export] Hint Resolve subst_exp_in_exp_subst_exp_in_exp : lngen.
+
+(* begin hide *)
+
+Lemma subst_typ_in_entry_subst_typ_in_entry_mutual :
+(forall entry1 A1 A2 X2 X1,
+  X2 `notin` tvar_in_typ A1 ->
+  X2 <> X1 ->
+  subst_typ_in_entry A1 X1 (subst_typ_in_entry A2 X2 entry1) = subst_typ_in_entry (subst_typ_in_typ A1 X1 A2) X2 (subst_typ_in_entry A1 X1 entry1)).
+Proof.
+apply_mutual_ind entry_mutind;
+default_simp.
+Qed.
+
+(* end hide *)
+
+Lemma subst_typ_in_entry_subst_typ_in_entry :
+forall entry1 A1 A2 X2 X1,
+  X2 `notin` tvar_in_typ A1 ->
+  X2 <> X1 ->
+  subst_typ_in_entry A1 X1 (subst_typ_in_entry A2 X2 entry1) = subst_typ_in_entry (subst_typ_in_typ A1 X1 A2) X2 (subst_typ_in_entry A1 X1 entry1).
+Proof.
+pose proof subst_typ_in_entry_subst_typ_in_entry_mutual as H; intuition eauto.
+Qed.
+
+#[export] Hint Resolve subst_typ_in_entry_subst_typ_in_entry : lngen.
 
 (* begin hide *)
 
@@ -4824,6 +6056,39 @@ Qed.
 
 (* end hide *)
 
+(* begin hide *)
+
+Lemma subst_typ_in_entry_close_entry_wrt_typ_rec_open_entry_wrt_typ_rec_mutual :
+(forall entry1 A1 X1 X2 n1,
+  X2 `notin` tvar_in_entry entry1 ->
+  X2 `notin` tvar_in_typ A1 ->
+  X2 <> X1 ->
+  degree_typ_wrt_typ n1 A1 ->
+  subst_typ_in_entry A1 X1 entry1 = close_entry_wrt_typ_rec n1 X2 (subst_typ_in_entry A1 X1 (open_entry_wrt_typ_rec n1 (typ_var_f X2) entry1))).
+Proof.
+apply_mutual_ind entry_mutrec;
+default_simp.
+Qed.
+
+(* end hide *)
+
+(* begin hide *)
+
+Lemma subst_typ_in_entry_close_entry_wrt_typ_rec_open_entry_wrt_typ_rec :
+forall entry1 A1 X1 X2 n1,
+  X2 `notin` tvar_in_entry entry1 ->
+  X2 `notin` tvar_in_typ A1 ->
+  X2 <> X1 ->
+  degree_typ_wrt_typ n1 A1 ->
+  subst_typ_in_entry A1 X1 entry1 = close_entry_wrt_typ_rec n1 X2 (subst_typ_in_entry A1 X1 (open_entry_wrt_typ_rec n1 (typ_var_f X2) entry1)).
+Proof.
+pose proof subst_typ_in_entry_close_entry_wrt_typ_rec_open_entry_wrt_typ_rec_mutual as H; intuition eauto.
+Qed.
+
+#[export] Hint Resolve subst_typ_in_entry_close_entry_wrt_typ_rec_open_entry_wrt_typ_rec : lngen.
+
+(* end hide *)
+
 Lemma subst_typ_in_typ_close_typ_wrt_typ_open_typ_wrt_typ :
 forall A2 A1 X1 X2,
   X2 `notin` tvar_in_typ A2 ->
@@ -4885,6 +6150,19 @@ unfold close_exp_wrt_exp; unfold open_exp_wrt_exp; default_simp.
 Qed.
 
 #[export] Hint Resolve subst_exp_in_exp_close_exp_wrt_exp_open_exp_wrt_exp : lngen.
+
+Lemma subst_typ_in_entry_close_entry_wrt_typ_open_entry_wrt_typ :
+forall entry1 A1 X1 X2,
+  X2 `notin` tvar_in_entry entry1 ->
+  X2 `notin` tvar_in_typ A1 ->
+  X2 <> X1 ->
+  lc_typ A1 ->
+  subst_typ_in_entry A1 X1 entry1 = close_entry_wrt_typ X2 (subst_typ_in_entry A1 X1 (open_entry_wrt_typ entry1 (typ_var_f X2))).
+Proof.
+unfold close_entry_wrt_typ; unfold open_entry_wrt_typ; default_simp.
+Qed.
+
+#[export] Hint Resolve subst_typ_in_entry_close_entry_wrt_typ_open_entry_wrt_typ : lngen.
 
 Lemma subst_typ_in_typ_typ_all :
 forall X2 A2 A1 X1,
@@ -5013,6 +6291,30 @@ Qed.
 #[export] Hint Resolve subst_exp_in_exp_intro_rec : lngen.
 #[export] Hint Rewrite subst_exp_in_exp_intro_rec using solve [auto] : lngen.
 
+(* begin hide *)
+
+Lemma subst_typ_in_entry_intro_rec_mutual :
+(forall entry1 X1 A1 n1,
+  X1 `notin` tvar_in_entry entry1 ->
+  open_entry_wrt_typ_rec n1 A1 entry1 = subst_typ_in_entry A1 X1 (open_entry_wrt_typ_rec n1 (typ_var_f X1) entry1)).
+Proof.
+apply_mutual_ind entry_mutind;
+default_simp.
+Qed.
+
+(* end hide *)
+
+Lemma subst_typ_in_entry_intro_rec :
+forall entry1 X1 A1 n1,
+  X1 `notin` tvar_in_entry entry1 ->
+  open_entry_wrt_typ_rec n1 A1 entry1 = subst_typ_in_entry A1 X1 (open_entry_wrt_typ_rec n1 (typ_var_f X1) entry1).
+Proof.
+pose proof subst_typ_in_entry_intro_rec_mutual as H; intuition eauto.
+Qed.
+
+#[export] Hint Resolve subst_typ_in_entry_intro_rec : lngen.
+#[export] Hint Rewrite subst_typ_in_entry_intro_rec using solve [auto] : lngen.
+
 Lemma subst_typ_in_typ_intro :
 forall X1 A1 A2,
   X1 `notin` tvar_in_typ A1 ->
@@ -5042,6 +6344,16 @@ unfold open_exp_wrt_exp; default_simp.
 Qed.
 
 #[export] Hint Resolve subst_exp_in_exp_intro : lngen.
+
+Lemma subst_typ_in_entry_intro :
+forall X1 entry1 A1,
+  X1 `notin` tvar_in_entry entry1 ->
+  open_entry_wrt_typ entry1 A1 = subst_typ_in_entry A1 X1 (open_entry_wrt_typ entry1 (typ_var_f X1)).
+Proof.
+unfold open_entry_wrt_typ; default_simp.
+Qed.
+
+#[export] Hint Resolve subst_typ_in_entry_intro : lngen.
 
 
 (* *********************************************************************** *)

@@ -1,11 +1,14 @@
 Require Import systemf.lngen.def_ott.
 Require Import systemf.lngen.prop_ln.
 
-Inductive ctx_entry :=
-| tvar
-| var_typ (A : typ).
+Definition ctx := list (atom * entry).
 
-Definition ctx := list (atom * ctx_entry).
+Fixpoint tvar_in_entries (Γ : ctx) : atoms :=
+  match Γ with
+  | nil => {}
+  | (X, entry_tvar) :: Γ' => (tvar_in_entries Γ')
+  | (X, entry_var A) :: Γ' => tvar_in_typ A \u tvar_in_entries Γ'
+  end.
 
 Ltac gather_atoms ::=
   let A := gather_atoms_with (fun x : vars => x) in
@@ -13,18 +16,21 @@ Ltac gather_atoms ::=
   let C1 := gather_atoms_with (fun x : exp => var_in_exp x) in
   let C2 := gather_atoms_with (fun x : exp => tvar_in_exp x) in
   let D := gather_atoms_with (fun x : typ => tvar_in_typ x) in
-  let DE:= gather_atoms_with (fun x : ctx => dom x) in
-  constr:(A \u B \u C1 \u C2 \u D \u D).
+  let E1:= gather_atoms_with (fun x : ctx => dom x) in
+  let E2:= gather_atoms_with (fun x : ctx => tvar_in_entries x) in
+  constr:(A \u B \u C1 \u C2 \u D \u E1 \u E2).
 
 Reserved Notation "Γ ⊢ t : A" 
   (at level 50, t at next level, no associativity).
 Inductive typing : ctx -> exp -> typ -> Prop :=
 | typing_var : forall (Γ : ctx) (x : atom) (A : typ),
-  binds x (var_typ A) Γ ->
+  lc_typ A ->
+  binds x (entry_var A) Γ ->
   Γ ⊢ (exp_var_f x) : A
 | typing_abs : forall (L : atoms) (Γ : ctx) (A B : typ) (t : exp),
+  lc_typ A ->
   (forall x, 
-    x `notin` L -> ((x , var_typ A) :: Γ) ⊢ t : B) ->
+    x `notin` L -> ((x , entry_var A) :: Γ) ⊢ open_exp_wrt_exp t (exp_var_f x) : B) ->
   Γ ⊢ (exp_abs A t) : (typ_arr A B)
 | typing_app : forall (Γ : ctx) (s t : exp) (A B : typ),
   Γ ⊢ s : (typ_arr A B) ->
@@ -32,9 +38,10 @@ Inductive typing : ctx -> exp -> typ -> Prop :=
   Γ ⊢ (exp_app s t) : B
 | typing_tabs : forall (L : atoms) (Γ : ctx) (t : exp) (A : typ),
   (forall X, X `notin` L -> 
-    ((X , tvar) :: Γ) ⊢ t : open_typ_wrt_typ A (typ_var_f X)) ->
+    ((X , entry_tvar) :: Γ) ⊢ (open_exp_wrt_typ t (typ_var_f X)) : open_typ_wrt_typ A (typ_var_f X)) ->
   Γ ⊢ (exp_tabs t) : (typ_all A)
-| typing_tapp : forall (Γ : ctx) (t : exp) (A B A' : typ),
+| typing_tapp : forall (Γ : ctx) (t : exp) (A B : typ),
+  lc_typ B ->
   Γ ⊢ t : (typ_all A) ->
   Γ ⊢ exp_tapp t B : (open_typ_wrt_typ A B)
 where "Γ ⊢ t : A" := (typing Γ t A).

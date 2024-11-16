@@ -1,0 +1,172 @@
+Require Import Coq.Program.Equality.
+Require Import Metalib.Metatheory.
+From Hammer Require Import Tactics.
+
+Require Import systemf.lngen.def_ott.
+Require Import systemf.lngen.prop_ln.
+Require Import common.ltac_ln.
+Require Import systemf.lngen.def_extra.
+
+From Coq Require Import ssreflect ssrfun ssrbool.
+
+Set Implicit Arguments.
+Unset Strict Implicit.
+Unset Printing Implicit Defensive.
+
+Lemma typing_lc_typ : forall Γ t A, Γ ⊢ t : A -> lc_typ A.
+Proof.
+  intros. induction H; try qauto inv:lc_typ ctrs:lc_typ.
+  - pick fresh x. inst_cofinites_with x.
+    qauto inv:lc_typ ctrs:lc_typ.
+  - pick fresh X. inst_cofinites_with X.
+    eapply lc_typ_all_exists; eauto.
+  - inversion IHtyping; subst. pick fresh X. inst_cofinites_with X.
+    specialize (H2 X).
+    eapply subst_typ_in_typ_lc_typ with (X1:=X) (A2:=B) in H2; eauto.
+    rewrite subst_typ_in_typ_open_typ_wrt_typ in H2; eauto.
+    simpl in H2. destruct_eq_atom.
+    rewrite subst_typ_in_typ_fresh_eq in H2; eauto.
+Qed.
+
+Hint Constructors uniq : core.
+Hint Resolve typing_lc_typ : core.
+
+Lemma typing_lc_exp : forall Γ t A, Γ ⊢ t : A -> lc_exp t.
+Proof.
+  intros. induction H; try qauto inv:lc_exp ctrs:lc_exp.
+  - pick fresh x. inst_cofinites_with x.
+    eapply lc_exp_abs_exists; eauto.
+  - pick fresh X. inst_cofinites_with X.
+    eapply lc_exp_tabs_exists; eauto.
+Qed.
+
+Ltac unify_binds1 :=
+  match goal with
+  | H_1 : binds ?X _ ?Γ, H_2 : binds ?X _ ?Γ |- _ =>
+    (* let H_3 := fresh "H" in
+    apply binds_unique with (a:=b2) in H_1 as H_3; eauto *)
+    assert True
+  end.
+
+Lemma typing_subst_var Γ1 Γ2 x t s A B :
+  (Γ2 ++ (x, entry_var B) :: Γ1) ⊢ t : A ->
+  uniq (Γ2 ++ (x, entry_var B) :: Γ1) ->
+  Γ1 ⊢ s : B ->
+  (Γ2 ++ Γ1) ⊢ subst_exp_in_exp s x t : A.
+Proof.
+  intros. dependent induction H; simpl; eauto using typing.
+  - destruct_eq_atom; eauto.
+    assert (binds x (entry_var A) (Γ2 ++ (x, entry_var A) :: Γ1)) by auto.
+    assert (entry_var A = entry_var B) by (eauto using binds_unique).
+    dependent destruction H4; eauto. admit.
+    eapply binds_remove_mid in H0; eauto using typing.
+  - inst_cofinites_for typing_abs; eauto.
+    intros. inst_cofinites_with x0.
+    replace (open_exp_wrt_exp (subst_exp_in_exp s x t) (exp_var_f x0)) with
+            (subst_exp_in_exp s x (open_exp_wrt_exp t (exp_var_f x0))) by admit.
+    rewrite_env (((x0, entry_var A) :: Γ2) ++ Γ1).
+    eapply H1; simpl; eauto.
+  - inst_cofinites_for typing_tabs; eauto.
+    intros. inst_cofinites_with X.
+    replace (open_typ_wrt_typ (subst_typ_in_typ B X A) (typ_var_f X)) with
+            (subst_typ_in_typ B X (open_typ_wrt_typ A (typ_var_f X))) by admit.
+    replace (open_exp_wrt_typ (subst_exp_in_exp s x t) (typ_var_f X)) with
+            (subst_exp_in_exp s x (open_exp_wrt_typ t (typ_var_f X))) by admit.
+    rewrite_env (((X, entry_tvar) :: Γ2) ++ Γ1).
+    eapply H0; simpl; eauto.
+Admitted.
+
+Lemma typing_subst_tvar Γ1 Γ2 X t A B :
+  (Γ2 ++ (X, entry_tvar) :: Γ1) ⊢ t : A ->
+  uniq (Γ2 ++ (X, entry_tvar) :: Γ1) ->
+  lc_typ B ->
+  map (subst_typ_in_entry B X) (Γ2 ++ Γ1) ⊢ subst_typ_in_exp B X t : subst_typ_in_typ B X A.
+Proof.
+  intros. dependent induction H; simpl; eauto using typing.
+  - econstructor; eauto. admit.
+    replace (entry_var (subst_typ_in_typ B X A)) with (subst_typ_in_entry B X (entry_var A)) by auto.
+    eapply binds_map; eauto.
+    apply binds_remove_mid in H0; eauto. admit.  
+  - inst_cofinites_for typing_abs.
+    hauto use:subst_typ_in_typ_lc_typ.
+    intros.
+    rewrite_env (map (subst_typ_in_entry B X) (((x, entry_var A) :: Γ2) ++ Γ1)).
+    replace (open_exp_wrt_exp (subst_typ_in_exp B X t) (exp_var_f x)) with 
+            (subst_typ_in_exp B X (open_exp_wrt_exp t (exp_var_f x))) by
+     admit.
+    eapply H1; eauto. simpl; eauto.
+  - inst_cofinites_for typing_tabs. intros. 
+    inst_cofinites_with X0.
+    rewrite_env (map (subst_typ_in_entry B X) (((X0, entry_tvar) :: Γ2) ++ Γ1)).
+    replace (open_typ_wrt_typ (subst_typ_in_typ B X A) (typ_var_f X0)) with
+            (subst_typ_in_typ B X (open_typ_wrt_typ A (typ_var_f X0))) by admit.
+    replace (open_exp_wrt_typ (subst_typ_in_exp B X t) (typ_var_f X0)) with
+            (subst_typ_in_exp B X (open_exp_wrt_typ t (typ_var_f X0))) by admit.
+    eapply H0; eauto.
+    simpl; eauto.
+  - rewrite subst_typ_in_typ_open_typ_wrt_typ; eauto.
+    econstructor; eauto.
+    eapply subst_typ_in_typ_lc_typ; eauto.
+Admitted.
+
+Lemma typing_subst_var0 Γ x t s A B :
+  x `notin` dom (Γ) ->
+  ((x, entry_var B) :: Γ) ⊢ t : A ->
+  Γ ⊢ s : B ->
+  Γ ⊢ subst_exp_in_exp s x t : A.
+Proof.
+  intros. rewrite_env (nil ++ Γ).
+  eapply typing_subst_var; eauto. 
+Qed.
+
+Lemma map_subst_tvar_in_entry_fresh_eq Γ X B :
+  X `notin` tvar_in_entries (Γ) ->
+  map (subst_typ_in_entry B X) Γ = Γ.
+Proof.
+  intros. induction Γ; simpl; eauto.
+  destruct a; destruct e; simpl in *; f_equal; eauto.
+  rewrite subst_typ_in_typ_fresh_eq; eauto.
+Qed.
+
+Lemma typing_subst_tvar0 Γ X t A B :
+  uniq Γ ->
+  X `notin` dom (Γ) `union` tvar_in_entries Γ ->
+  ((X, entry_tvar) :: Γ) ⊢ t : A ->
+  lc_typ B ->
+  Γ ⊢ subst_typ_in_exp B X t : subst_typ_in_typ B X A.
+Proof.
+  intros. replace (Γ) with (map (subst_typ_in_entry B X) (nil ++ Γ)) by
+    (apply map_subst_tvar_in_entry_fresh_eq; eauto).
+  eapply typing_subst_tvar; eauto.
+Qed.
+
+Theorem preservation Γ t t' A : 
+  uniq Γ ->
+  Γ ⊢ t : A ->
+  t ⤳ t' ->
+  Γ ⊢ t' : A.
+Proof.
+  move => Huniq Hty Hstep. move : Γ A Hty Huniq. 
+    induction Hstep; intros; eauto using typing.
+  - inversion Hty; subst; eapply typing_app; eauto.
+  - inversion Hty; subst; eapply typing_app; eauto.
+  - inversion Hty; subst.
+    inversion H3; subst.
+    pick fresh x. inst_cofinites_with x.
+    eapply typing_subst_var0 with (s:=s) in H8; auto.
+    rewrite subst_exp_in_exp_open_exp_wrt_exp in H8; eauto using typing_lc_exp.
+    simpl in H8. destruct_eq_atom.
+    rewrite subst_exp_in_exp_fresh_eq in H8; eauto.
+  - inversion Hty; subst.
+    eapply typing_tapp; eauto.
+  - inversion Hty; subst.
+    inversion H4; subst.
+    pick fresh X. inst_cofinites_with X.
+    eapply typing_subst_tvar0 with (B:=A) in H3; eauto.
+    rewrite subst_typ_in_typ_open_typ_wrt_typ in H3; eauto.
+    simpl in H3. destruct_eq_atom.
+    rewrite subst_typ_in_typ_fresh_eq in H3; eauto.
+    rewrite subst_typ_in_exp_open_exp_wrt_typ in H3; eauto.
+    simpl in H3. destruct_eq_atom.
+    rewrite subst_typ_in_exp_fresh_eq in H3; eauto.
+Qed.

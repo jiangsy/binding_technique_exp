@@ -12,6 +12,10 @@ Inductive typ : Set :=
  | typ_arr (A1:typ) (A2:typ)
  | typ_all (A:typ).
 
+Inductive entry : Set := 
+ | entry_var (A:typ)
+ | entry_tvar : entry.
+
 Inductive exp : Set := 
  | exp_var_b (_:nat)
  | exp_var_f (x:expvar)
@@ -39,6 +43,12 @@ Fixpoint open_typ_wrt_typ_rec (k:nat) (A_5:typ) (A__6:typ) {struct A__6}: typ :=
   | (typ_all A) => typ_all (open_typ_wrt_typ_rec (S k) A_5 A)
 end.
 
+Definition open_entry_wrt_typ_rec (k:nat) (A5:typ) (entry5:entry) : entry :=
+  match entry5 with
+  | (entry_var A) => entry_var (open_typ_wrt_typ_rec k A5 A)
+  | entry_tvar => entry_tvar 
+end.
+
 Fixpoint open_exp_wrt_exp_rec (k:nat) (e_5:exp) (e__6:exp) {struct e__6}: exp :=
   match e__6 with
   | (exp_var_b nat) => 
@@ -64,6 +74,8 @@ Fixpoint open_exp_wrt_typ_rec (k:nat) (A_5:typ) (e_5:exp) {struct e_5}: exp :=
   | (exp_tapp e A) => exp_tapp (open_exp_wrt_typ_rec k A_5 e) (open_typ_wrt_typ_rec k A_5 A)
 end.
 
+Definition open_entry_wrt_typ A5 entry5 := open_entry_wrt_typ_rec 0 entry5 A5.
+
 Definition open_exp_wrt_exp e_5 e__6 := open_exp_wrt_exp_rec 0 e__6 e_5.
 
 Definition open_exp_wrt_typ A_5 e_5 := open_exp_wrt_typ_rec 0 e_5 A_5.
@@ -84,6 +96,14 @@ Inductive lc_typ : typ -> Prop :=    (* defn lc_typ *)
  | lc_typ_all : forall (A:typ),
       ( forall X , lc_typ  ( open_typ_wrt_typ A (typ_var_f X) )  )  ->
      (lc_typ (typ_all A)).
+
+(* defns LC_entry *)
+Inductive lc_entry : entry -> Prop :=    (* defn lc_entry *)
+ | lc_entry_var : forall (A:typ),
+     (lc_typ A) ->
+     (lc_entry (entry_var A))
+ | lc_entry_tvar : 
+     (lc_entry entry_tvar).
 
 (* defns LC_exp *)
 Inductive lc_exp : exp -> Prop :=    (* defn lc_exp *)
@@ -123,6 +143,12 @@ Fixpoint var_in_exp (e_5:exp) : vars :=
   | (exp_tapp e A) => (var_in_exp e)
 end.
 
+Definition tvar_in_entry (entry5:entry) : vars :=
+  match entry5 with
+  | (entry_var A) => (tvar_in_typ A)
+  | entry_tvar => {}
+end.
+
 Fixpoint tvar_in_exp (e_5:exp) : vars :=
   match e_5 with
   | (exp_var_b nat) => {}
@@ -152,6 +178,12 @@ Fixpoint subst_exp_in_exp (e_5:exp) (x5:expvar) (e__6:exp) {struct e__6} : exp :
   | (exp_tapp e A) => exp_tapp (subst_exp_in_exp e_5 x5 e) A
 end.
 
+Definition subst_typ_in_entry (A5:typ) (X5:typvar) (entry5:entry) : entry :=
+  match entry5 with
+  | (entry_var A) => entry_var (subst_typ_in_typ A5 X5 A)
+  | entry_tvar => entry_tvar 
+end.
+
 Fixpoint subst_typ_in_exp (A_5:typ) (X5:typvar) (e_5:exp) {struct e_5} : exp :=
   match e_5 with
   | (exp_var_b nat) => exp_var_b nat
@@ -167,6 +199,6 @@ end.
 
 
 (** infrastructure *)
-Hint Constructors lc_typ lc_exp : core.
+Hint Constructors lc_typ lc_entry lc_exp : core.
 
 
