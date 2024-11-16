@@ -26,23 +26,6 @@ end.
 
 Notation "Δ ⊢ A" := (wf_typ Δ A) (at level 99).
 
-(* Reserved Notation "Δ ⊢ A" (at level 99).
-Inductive wf_typ : ctx -> typ -> Prop :=
-| wf_tvar Δ X A :
-  lookup X Δ A ->
-  Δ ⊢ typ_var X
-| wf_top Δ :
-  Δ ⊢ typ_top
-| wf_arr Δ A B :
-  Δ ⊢ A ->
-  Δ ⊢ B ->
-  Δ ⊢ (typ_arr A B)
-| wf_all Δ A B : 
-  Δ ⊢ A ->
-  (A :: Δ) ⊢ B ->
-  Δ ⊢ (typ_all A B)
-where "Δ ⊢ A" := (wf_typ Δ A). *)
-
 Reserved Notation "Δ ⊢ A <: B" 
   (at level 99, A at next level, no associativity).
 Inductive subtyping : ctx -> typ -> typ -> Prop :=

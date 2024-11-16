@@ -107,6 +107,38 @@ Proof.
   - eauto using subtyping_transitivity.
 Qed.
 
+Lemma value_arr_inv t A B :
+  nil ;; nil ⊢ t : typ_arr A B ->
+  is_value t ->
+  exists A' t', t = exp_abs A' t'.
+Proof.
+  intros. dependent induction H; simpl;
+    try hauto inv:lookup_var.
+  - inversion H0; subst; eauto. inversion H2.
+Qed.
+
+Lemma value_all_inv t A B :
+  nil ;; nil ⊢ t : typ_all A B ->
+  is_value t ->
+  exists A' t', t = exp_tabs A' t'.
+Proof.
+  intros. dependent induction H; simpl;
+    try hauto inv:lookup_var.
+  - inversion H0; subst; eauto. inversion H2.
+Qed.
+  
+Theorem progress t A :
+  nil ;; nil ⊢ t : A ->
+  is_value t \/ exists t', t ⤳ t'.
+Proof.
+  intros. dependent induction H; subst; try hauto ctrs:typing.
+  - inversion H.
+  - ssimpl; try hauto ctrs:typing, step.
+    hauto use:value_arr_inv ctrs:step.
+  - ssimpl; try hauto ctrs:typing, step.
+    hauto use:value_all_inv ctrs:step.
+Qed.
+
 Theorem preservation Δ Γ t A t' :
   Δ ;; Γ ⊢ t : A ->
   wf_ctx Δ ->
