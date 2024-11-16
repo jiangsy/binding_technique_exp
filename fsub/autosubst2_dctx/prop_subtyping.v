@@ -70,6 +70,12 @@ Proof.
   - apply sub_top; auto.
 Qed.
 
+(* the size function is to relate B and (B ⟨ξ⟩) (more concretely, B and (B ⟨↑ >> ↑ ... >> ↑⟩) )
+   (this is a debrujin specific issue, I believe)
+   a more direct generalization to achieve this can be found at
+   https://www.ps.uni-saarland.de/extras/autosubst2/poplmark/html/POPLMark.POPLMark.html#sub_trans'
+   (this may only work in the well-scoped version)
+*)
 Theorem subtyping_transitivity_narrowing n:
   (forall Δ A B C,  
     typ_size B = n -> 

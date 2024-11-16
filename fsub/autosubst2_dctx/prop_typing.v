@@ -101,7 +101,8 @@ Lemma typing_tabs_inv Δ Γ A A' B C t :
   Δ ⊢ B <: typ_all A' C ->
   ((Δ ⊢ A' <: A) /\ (exists C', ((A'::Δ) ;; (map (ren_typ ↑) Γ) ⊢ t : C') /\ (A'::Δ ⊢ C' <: C))).
 Proof.
-  move => H. move : C A'. dependent induction H; intros; try hauto ctrs:typing.
+  move => H. move : C A'. 
+    dependent induction H; intros; try hauto ctrs:typing.
   - inversion H1; subst; split; eauto. eexists; split; eauto.
     eapply (typing_narrowing _ nil); eauto.
   - eauto using subtyping_transitivity.
@@ -170,3 +171,5 @@ Proof.
       * eapply subtyping_subst; eauto.
         hauto unfold:ctx_tvar_subst,wf_ctx inv:lookup_tvar ctrs:subtyping use:subtyping_reflexivity simp+:asimpl. 
 Qed.
+
+Print Assumptions typing_abs_inv.
