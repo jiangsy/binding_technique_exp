@@ -55,7 +55,6 @@ Proof.
     use:wf_typ_renaming_tvar.
 Qed.
 
-
 Lemma wf_typ_subst_tvar Δ Δ' A σ:
   Δ ⊢ A ->
   ctx_tvar_subst_wf Δ Δ' σ ->
@@ -66,6 +65,15 @@ Proof.
   - asimpl. simpl in *; split.
     + hauto. 
     + eapply IHA2; hauto unfold:ctx_tvar_subst_wf use:wf_typ_weakening_tvar0 inv:lookup_tvar. 
+Qed.
+
+Lemma wf_typ_narrowing : forall Δ1 Δ2 A B C,
+  Δ2 ++ A :: Δ1 ⊢ C->
+  Δ2 ++ B :: Δ1 ⊢ C.
+Proof.
+  intros. eapply wf_typ_renaming_tvar' with (ξ:=id) in H; eauto.
+  - eapply ctx_tvar_rename_weak_rebounding; eauto.
+  - asimpl; auto.
 Qed.
 
 Lemma sub_renaming_tvar Δ Δ' A B ξ :
