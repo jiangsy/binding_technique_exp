@@ -209,3 +209,12 @@ Proof.
     simpl in H3. destruct_eq_atom.
     rewrite subst_typ_in_exp_fresh_eq in H3; eauto.
 Qed.
+
+Theorem progress t A :
+  nil ⊢ t : A ->
+  is_value t \/ exists t', t ⤳ t'.
+Proof.
+  intros. dependent induction H; subst; simpl; try hauto ctrs:typing,step.
+  - inversion H; subst; hauto ctrs:typing,step depth:5.
+  - inversion H0; subst; hauto ctrs:typing,step.
+Qed.
