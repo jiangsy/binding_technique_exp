@@ -1,6 +1,7 @@
 Require stlc.autosubst2.prop_type_safety.
 Require stlc.lngen.prop_type_safety.
 Require systemf.autosubst2.prop_type_safety.
+Require systemf.lngen.prop_type_safety.
 Require fsub.autosubst2_dctx.prop_typing.
 
 Section stlc.
@@ -39,6 +40,16 @@ Section systemf.
     Check progress.
     Print Assumptions progress.
   End autosubst2.
+
+  Section lngen.
+    Import systemf.lngen.def_extra.
+    Import systemf.lngen.prop_type_safety.
+    
+    Check preservation.
+    Print Assumptions preservation. 
+    Check progress.
+    Print Assumptions progress.
+  End lngen.
 
 End systemf.
 
