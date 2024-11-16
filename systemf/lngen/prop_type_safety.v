@@ -28,9 +28,6 @@ Proof.
     rewrite subst_typ_in_typ_fresh_eq in H2; eauto.
 Qed.
 
-Hint Constructors uniq : core.
-Hint Resolve typing_lc_typ : core.
-
 Lemma typing_lc_exp : forall Γ t A, Γ ⊢ t : A -> lc_exp t.
 Proof.
   intros. induction H; try qauto inv:lc_exp ctrs:lc_exp.
@@ -40,13 +37,46 @@ Proof.
     eapply lc_exp_tabs_exists; eauto.
 Qed.
 
-Ltac unify_binds1 :=
+Hint Constructors uniq : core.
+Hint Resolve typing_lc_typ typing_lc_exp : core.
+
+Ltac unify_binds :=
   match goal with
-  | H_1 : binds ?X _ ?Γ, H_2 : binds ?X _ ?Γ |- _ =>
-    (* let H_3 := fresh "H" in
-    apply binds_unique with (a:=b2) in H_1 as H_3; eauto *)
-    assert True
+  | H_1 : binds ?X ?b1 ?θ, H_2 : binds ?X ?b2 ?θ |- _ =>
+    let H_3 := fresh "H" in
+    apply binds_unique with (a:=b2) in H_1 as H_3; eauto; dependent destruction H_3; subst
   end.
+
+Lemma binds_remove_mid_diff_bind {A} : forall ls1 ls2 X Y (b1 b2 : A),
+  binds X b1 (ls2 ++ (Y, b2) :: ls1) ->
+  b1 <> b2 ->
+  binds X b1 (ls2 ++ ls1).
+Proof.  
+  intros. induction ls2; simpl in *; eauto.
+  - inversion H. dependent destruction H1.
+    + contradiction.
+    + auto. 
+  - destruct a. inversion H.
+    + dependent destruction H1. auto.
+    + auto.
+Qed.
+
+Lemma typing_weakening Γ1 Γ2 Γ3 t A :
+  (Γ1 ++ Γ3) ⊢ t : A ->
+  uniq (Γ1 ++ Γ2 ++ Γ3) ->
+  (Γ1 ++ Γ2 ++ Γ3) ⊢ t : A.
+Proof.
+  intros. dependent induction H; eauto using typing.
+  - inst_cofinites_for typing_abs; eauto. intros.
+    inst_cofinites_with x.
+    rewrite_env (((x, entry_var A) :: Γ1) ++ Γ2 ++ Γ3).
+    eapply H1; eauto. simpl; eauto.
+  - inst_cofinites_for typing_tabs; eauto. intros.
+    inst_cofinites_with X.
+    rewrite_env (((X, entry_tvar) :: Γ1) ++ Γ2 ++ Γ3).
+    eapply H0; eauto.
+    simpl; eauto.
+Qed.
 
 Lemma typing_subst_var Γ1 Γ2 x t s A B :
   (Γ2 ++ (x, entry_var B) :: Γ1) ⊢ t : A ->
@@ -56,25 +86,27 @@ Lemma typing_subst_var Γ1 Γ2 x t s A B :
 Proof.
   intros. dependent induction H; simpl; eauto using typing.
   - destruct_eq_atom; eauto.
-    assert (binds x (entry_var A) (Γ2 ++ (x, entry_var A) :: Γ1)) by auto.
-    assert (entry_var A = entry_var B) by (eauto using binds_unique).
-    dependent destruction H4; eauto. admit.
+    assert (binds x (entry_var B) (Γ2 ++ (x, entry_var B) :: Γ1)) by auto.
+    unify_binds.
+    rewrite_env (nil ++ Γ2 ++ Γ1). apply typing_weakening; simpl; eauto.
+    eapply uniq_remove_mid with (F:=x~entry_var A); eauto.
     eapply binds_remove_mid in H0; eauto using typing.
   - inst_cofinites_for typing_abs; eauto.
     intros. inst_cofinites_with x0.
     replace (open_exp_wrt_exp (subst_exp_in_exp s x t) (exp_var_f x0)) with
-            (subst_exp_in_exp s x (open_exp_wrt_exp t (exp_var_f x0))) by admit.
+            (subst_exp_in_exp s x (open_exp_wrt_exp t (exp_var_f x0))).
     rewrite_env (((x0, entry_var A) :: Γ2) ++ Γ1).
     eapply H1; simpl; eauto.
+    rewrite subst_exp_in_exp_open_exp_wrt_exp; eauto.
+    simpl. destruct_eq_atom; eauto.
   - inst_cofinites_for typing_tabs; eauto.
     intros. inst_cofinites_with X.
-    replace (open_typ_wrt_typ (subst_typ_in_typ B X A) (typ_var_f X)) with
-            (subst_typ_in_typ B X (open_typ_wrt_typ A (typ_var_f X))) by admit.
     replace (open_exp_wrt_typ (subst_exp_in_exp s x t) (typ_var_f X)) with
-            (subst_exp_in_exp s x (open_exp_wrt_typ t (typ_var_f X))) by admit.
+            (subst_exp_in_exp s x (open_exp_wrt_typ t (typ_var_f X))).
     rewrite_env (((X, entry_tvar) :: Γ2) ++ Γ1).
     eapply H0; simpl; eauto.
-Admitted.
+    rewrite <- subst_exp_in_exp_open_exp_wrt_typ; eauto.
+Qed.
 
 Lemma typing_subst_tvar Γ1 Γ2 X t A B :
   (Γ2 ++ (X, entry_tvar) :: Γ1) ⊢ t : A ->
@@ -83,34 +115,41 @@ Lemma typing_subst_tvar Γ1 Γ2 X t A B :
   map (subst_typ_in_entry B X) (Γ2 ++ Γ1) ⊢ subst_typ_in_exp B X t : subst_typ_in_typ B X A.
 Proof.
   intros. dependent induction H; simpl; eauto using typing.
-  - econstructor; eauto. admit.
+  - econstructor; eauto using subst_typ_in_typ_lc_typ.
     replace (entry_var (subst_typ_in_typ B X A)) with (subst_typ_in_entry B X (entry_var A)) by auto.
     eapply binds_map; eauto.
-    apply binds_remove_mid in H0; eauto. admit.  
+    apply binds_remove_mid in H0; eauto. unfold not. intros. subst.
+    assert (binds X (entry_tvar) (Γ2 ++ (X, entry_tvar) :: Γ1)) by auto.
+    unify_binds.
   - inst_cofinites_for typing_abs.
     hauto use:subst_typ_in_typ_lc_typ.
     intros.
     rewrite_env (map (subst_typ_in_entry B X) (((x, entry_var A) :: Γ2) ++ Γ1)).
     replace (open_exp_wrt_exp (subst_typ_in_exp B X t) (exp_var_f x)) with 
-            (subst_typ_in_exp B X (open_exp_wrt_exp t (exp_var_f x))) by
-     admit.
+            (subst_typ_in_exp B X (open_exp_wrt_exp t (exp_var_f x))).
     eapply H1; eauto. simpl; eauto.
+    rewrite subst_typ_in_exp_open_exp_wrt_exp; eauto.
   - inst_cofinites_for typing_tabs. intros. 
     inst_cofinites_with X0.
     rewrite_env (map (subst_typ_in_entry B X) (((X0, entry_tvar) :: Γ2) ++ Γ1)).
     replace (open_typ_wrt_typ (subst_typ_in_typ B X A) (typ_var_f X0)) with
-            (subst_typ_in_typ B X (open_typ_wrt_typ A (typ_var_f X0))) by admit.
+            (subst_typ_in_typ B X (open_typ_wrt_typ A (typ_var_f X0))).
     replace (open_exp_wrt_typ (subst_typ_in_exp B X t) (typ_var_f X0)) with
-            (subst_typ_in_exp B X (open_exp_wrt_typ t (typ_var_f X0))) by admit.
+            (subst_typ_in_exp B X (open_exp_wrt_typ t (typ_var_f X0))).
     eapply H0; eauto.
     simpl; eauto.
+    rewrite subst_typ_in_exp_open_exp_wrt_typ; eauto.
+    simpl. destruct_eq_atom; eauto.
+    rewrite subst_typ_in_typ_open_typ_wrt_typ; eauto.
+    simpl. destruct_eq_atom; eauto.
   - rewrite subst_typ_in_typ_open_typ_wrt_typ; eauto.
     econstructor; eauto.
     eapply subst_typ_in_typ_lc_typ; eauto.
-Admitted.
+Qed.
 
 Lemma typing_subst_var0 Γ x t s A B :
   x `notin` dom (Γ) ->
+  uniq Γ ->
   ((x, entry_var B) :: Γ) ⊢ t : A ->
   Γ ⊢ s : B ->
   Γ ⊢ subst_exp_in_exp s x t : A.
