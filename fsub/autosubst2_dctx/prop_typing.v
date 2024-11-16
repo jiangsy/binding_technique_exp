@@ -74,6 +74,17 @@ Qed.
 Definition wf_ctx Δ :=
   forall X A, lookup_tvar X Δ A -> Δ ⊢ A.
 
+Corollary typing_subst_term Δ Γ Γ' A t τ :
+  Δ ;; Γ ⊢ t : A ->
+  wf_ctx Δ ->
+  ctx_var_subst Δ Γ Γ' typ_var τ ->
+  Δ ;; Γ' ⊢ t [typ_var;τ] : A.
+Proof.
+  intros. replace A with (A [typ_var]) by (asimpl; auto).
+  eapply typing_subst; eauto.
+  hauto unfold:ctx_tvar_subst,wf_ctx use:subtyping_reflexivity ctrs:subtyping simp+:asimpl.
+Qed.
+
 Lemma typing_abs_inv Δ Γ A A' B C t :
   Δ ;; Γ ⊢ exp_abs A t : B ->
   Δ ⊢ B <: typ_arr A' C ->
@@ -106,9 +117,24 @@ Proof.
   induction Hstep; intros; eauto using typing;
     dependent induction Hty; try hauto ctrs:typing.
   - inversion Hty1; subst.
-    + admit.
-    + eapply typing_abs_inv in H1; eauto. admit. 
+    + eapply typing_subst_term; eauto.
+      hauto unfold:ctx_var_subst inv:lookup_var ctrs:lookup_var,typing simp+:asimpl.
+    + eapply typing_abs_inv in H1; eauto.
+      ssimpl.
+      eapply typing_sub with (A:=C'); eauto.
+      eapply typing_subst_term; eauto.
+      hauto unfold:ctx_var_subst inv:lookup_var ctrs:lookup_var,typing simp+:asimpl.
   - inversion Hty; subst.
-    + admit.
+    + eapply typing_subst; eauto. 
+      * hauto unfold:ctx_tvar_subst,wf_ctx inv:lookup_tvar ctrs:subtyping use:subtyping_reflexivity simp+:asimpl.
+      * unfold ctx_var_subst. intros. 
+        apply lookup_var_map_inv in H0. ssimpl. asimpl. hauto ctrs:typing.
     + eapply typing_tabs_inv in H1; eauto.
-Admitted.
+      ssimpl. eapply typing_sub with (A:=C' [B..]).
+      * eapply typing_subst; eauto.
+        hauto unfold:ctx_tvar_subst,wf_ctx inv:lookup_tvar ctrs:subtyping use:subtyping_reflexivity simp+:asimpl. 
+        unfold ctx_var_subst. intros. asimpl.
+        apply lookup_var_map_inv in H3. ssimpl. asimpl. hauto ctrs:typing.
+      * eapply subtyping_subst; eauto.
+        hauto unfold:ctx_tvar_subst,wf_ctx inv:lookup_tvar ctrs:subtyping use:subtyping_reflexivity simp+:asimpl. 
+Qed.
