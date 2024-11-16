@@ -8,7 +8,8 @@ Module Core.
 Inductive typ : Type :=
   | typ_var : nat -> typ
   | typ_arr : typ -> typ -> typ
-  | typ_all : typ -> typ -> typ.
+  | typ_all : typ -> typ -> typ
+  | typ_top : typ.
 
 Lemma congr_typ_arr {s0 : typ} {s1 : typ} {t0 : typ} {t1 : typ}
   (H0 : s0 = t0) (H1 : s1 = t1) : typ_arr s0 s1 = typ_arr t0 t1.
@@ -24,6 +25,11 @@ exact (eq_trans (eq_trans eq_refl (ap (fun x => typ_all x s1) H0))
          (ap (fun x => typ_all t0 x) H1)).
 Qed.
 
+Lemma congr_typ_top : typ_top = typ_top.
+Proof.
+exact (eq_refl).
+Qed.
+
 Lemma upRen_typ_typ (xi : nat -> nat) : nat -> nat.
 Proof.
 exact (up_ren xi).
@@ -35,6 +41,7 @@ Fixpoint ren_typ (xi_typ : nat -> nat) (s : typ) {struct s} : typ :=
   | typ_arr s0 s1 => typ_arr (ren_typ xi_typ s0) (ren_typ xi_typ s1)
   | typ_all s0 s1 =>
       typ_all (ren_typ xi_typ s0) (ren_typ (upRen_typ_typ xi_typ) s1)
+  | typ_top => typ_top
   end.
 
 Lemma up_typ_typ (sigma : nat -> typ) : nat -> typ.
@@ -49,6 +56,7 @@ Fixpoint subst_typ (sigma_typ : nat -> typ) (s : typ) {struct s} : typ :=
       typ_arr (subst_typ sigma_typ s0) (subst_typ sigma_typ s1)
   | typ_all s0 s1 =>
       typ_all (subst_typ sigma_typ s0) (subst_typ (up_typ_typ sigma_typ) s1)
+  | typ_top => typ_top
   end.
 
 Lemma upId_typ_typ (sigma : nat -> typ) (Eq : forall x, sigma x = typ_var x)
@@ -72,6 +80,7 @@ subst_typ sigma_typ s = s :=
   | typ_all s0 s1 =>
       congr_typ_all (idSubst_typ sigma_typ Eq_typ s0)
         (idSubst_typ (up_typ_typ sigma_typ) (upId_typ_typ _ Eq_typ) s1)
+  | typ_top => congr_typ_top
   end.
 
 Lemma upExtRen_typ_typ (xi : nat -> nat) (zeta : nat -> nat)
@@ -96,6 +105,7 @@ ren_typ xi_typ s = ren_typ zeta_typ s :=
       congr_typ_all (extRen_typ xi_typ zeta_typ Eq_typ s0)
         (extRen_typ (upRen_typ_typ xi_typ) (upRen_typ_typ zeta_typ)
            (upExtRen_typ_typ _ _ Eq_typ) s1)
+  | typ_top => congr_typ_top
   end.
 
 Lemma upExt_typ_typ (sigma : nat -> typ) (tau : nat -> typ)
@@ -121,6 +131,7 @@ subst_typ sigma_typ s = subst_typ tau_typ s :=
       congr_typ_all (ext_typ sigma_typ tau_typ Eq_typ s0)
         (ext_typ (up_typ_typ sigma_typ) (up_typ_typ tau_typ)
            (upExt_typ_typ _ _ Eq_typ) s1)
+  | typ_top => congr_typ_top
   end.
 
 Lemma up_ren_ren_typ_typ (xi : nat -> nat) (zeta : nat -> nat)
@@ -144,6 +155,7 @@ Fixpoint compRenRen_typ (xi_typ : nat -> nat) (zeta_typ : nat -> nat)
       congr_typ_all (compRenRen_typ xi_typ zeta_typ rho_typ Eq_typ s0)
         (compRenRen_typ (upRen_typ_typ xi_typ) (upRen_typ_typ zeta_typ)
            (upRen_typ_typ rho_typ) (up_ren_ren _ _ _ Eq_typ) s1)
+  | typ_top => congr_typ_top
   end.
 
 Lemma up_ren_subst_typ_typ (xi : nat -> nat) (tau : nat -> typ)
@@ -171,6 +183,7 @@ Fixpoint compRenSubst_typ (xi_typ : nat -> nat) (tau_typ : nat -> typ)
       congr_typ_all (compRenSubst_typ xi_typ tau_typ theta_typ Eq_typ s0)
         (compRenSubst_typ (upRen_typ_typ xi_typ) (up_typ_typ tau_typ)
            (up_typ_typ theta_typ) (up_ren_subst_typ_typ _ _ _ Eq_typ) s1)
+  | typ_top => congr_typ_top
   end.
 
 Lemma up_subst_ren_typ_typ (sigma : nat -> typ) (zeta_typ : nat -> nat)
@@ -209,6 +222,7 @@ ren_typ zeta_typ (subst_typ sigma_typ s) = subst_typ theta_typ s :=
       congr_typ_all (compSubstRen_typ sigma_typ zeta_typ theta_typ Eq_typ s0)
         (compSubstRen_typ (up_typ_typ sigma_typ) (upRen_typ_typ zeta_typ)
            (up_typ_typ theta_typ) (up_subst_ren_typ_typ _ _ _ Eq_typ) s1)
+  | typ_top => congr_typ_top
   end.
 
 Lemma up_subst_subst_typ_typ (sigma : nat -> typ) (tau_typ : nat -> typ)
@@ -250,6 +264,7 @@ subst_typ tau_typ (subst_typ sigma_typ s) = subst_typ theta_typ s :=
         (compSubstSubst_typ sigma_typ tau_typ theta_typ Eq_typ s0)
         (compSubstSubst_typ (up_typ_typ sigma_typ) (up_typ_typ tau_typ)
            (up_typ_typ theta_typ) (up_subst_subst_typ_typ _ _ _ Eq_typ) s1)
+  | typ_top => congr_typ_top
   end.
 
 Lemma renRen_typ (xi_typ : nat -> nat) (zeta_typ : nat -> nat) (s : typ) :
@@ -333,6 +348,7 @@ Fixpoint rinst_inst_typ (xi_typ : nat -> nat) (sigma_typ : nat -> typ)
       congr_typ_all (rinst_inst_typ xi_typ sigma_typ Eq_typ s0)
         (rinst_inst_typ (upRen_typ_typ xi_typ) (up_typ_typ sigma_typ)
            (rinstInst_up_typ_typ _ _ Eq_typ) s1)
+  | typ_top => congr_typ_top
   end.
 
 Lemma rinstInst'_typ (xi_typ : nat -> nat) (s : typ) :
@@ -480,7 +496,7 @@ Inductive exp : Type :=
   | exp_app : exp -> exp -> exp
   | exp_abs : typ -> exp -> exp
   | exp_tapp : exp -> typ -> exp
-  | exp_tabs : exp -> exp.
+  | exp_tabs : typ -> exp -> exp.
 
 Lemma congr_exp_app {s0 : exp} {s1 : exp} {t0 : exp} {t1 : exp}
   (H0 : s0 = t0) (H1 : s1 = t1) : exp_app s0 s1 = exp_app t0 t1.
@@ -503,10 +519,11 @@ exact (eq_trans (eq_trans eq_refl (ap (fun x => exp_tapp x s1) H0))
          (ap (fun x => exp_tapp t0 x) H1)).
 Qed.
 
-Lemma congr_exp_tabs {s0 : exp} {t0 : exp} (H0 : s0 = t0) :
-  exp_tabs s0 = exp_tabs t0.
+Lemma congr_exp_tabs {s0 : typ} {s1 : exp} {t0 : typ} {t1 : exp}
+  (H0 : s0 = t0) (H1 : s1 = t1) : exp_tabs s0 s1 = exp_tabs t0 t1.
 Proof.
-exact (eq_trans eq_refl (ap (fun x => exp_tabs x) H0)).
+exact (eq_trans (eq_trans eq_refl (ap (fun x => exp_tabs x s1) H0))
+         (ap (fun x => exp_tabs t0 x) H1)).
 Qed.
 
 Lemma upRen_typ_exp (xi : nat -> nat) : nat -> nat.
@@ -534,8 +551,9 @@ Fixpoint ren_exp (xi_typ : nat -> nat) (xi_exp : nat -> nat) (s : exp)
       exp_abs (ren_typ xi_typ s0)
         (ren_exp (upRen_exp_typ xi_typ) (upRen_exp_exp xi_exp) s1)
   | exp_tapp s0 s1 => exp_tapp (ren_exp xi_typ xi_exp s0) (ren_typ xi_typ s1)
-  | exp_tabs s0 =>
-      exp_tabs (ren_exp (upRen_typ_typ xi_typ) (upRen_typ_exp xi_exp) s0)
+  | exp_tabs s0 s1 =>
+      exp_tabs (ren_typ xi_typ s0)
+        (ren_exp (upRen_typ_typ xi_typ) (upRen_typ_exp xi_exp) s1)
   end.
 
 Lemma up_typ_exp (sigma : nat -> exp) : nat -> exp.
@@ -565,8 +583,9 @@ Fixpoint subst_exp (sigma_typ : nat -> typ) (sigma_exp : nat -> exp)
         (subst_exp (up_exp_typ sigma_typ) (up_exp_exp sigma_exp) s1)
   | exp_tapp s0 s1 =>
       exp_tapp (subst_exp sigma_typ sigma_exp s0) (subst_typ sigma_typ s1)
-  | exp_tabs s0 =>
-      exp_tabs (subst_exp (up_typ_typ sigma_typ) (up_typ_exp sigma_exp) s0)
+  | exp_tabs s0 s1 =>
+      exp_tabs (subst_typ sigma_typ s0)
+        (subst_exp (up_typ_typ sigma_typ) (up_typ_exp sigma_exp) s1)
   end.
 
 Lemma upId_typ_exp (sigma : nat -> exp) (Eq : forall x, sigma x = exp_var x)
@@ -607,10 +626,10 @@ subst_exp sigma_typ sigma_exp s = s :=
   | exp_tapp s0 s1 =>
       congr_exp_tapp (idSubst_exp sigma_typ sigma_exp Eq_typ Eq_exp s0)
         (idSubst_typ sigma_typ Eq_typ s1)
-  | exp_tabs s0 =>
-      congr_exp_tabs
+  | exp_tabs s0 s1 =>
+      congr_exp_tabs (idSubst_typ sigma_typ Eq_typ s0)
         (idSubst_exp (up_typ_typ sigma_typ) (up_typ_exp sigma_exp)
-           (upId_typ_typ _ Eq_typ) (upId_typ_exp _ Eq_exp) s0)
+           (upId_typ_typ _ Eq_typ) (upId_typ_exp _ Eq_exp) s1)
   end.
 
 Lemma upExtRen_typ_exp (xi : nat -> nat) (zeta : nat -> nat)
@@ -657,11 +676,11 @@ ren_exp xi_typ xi_exp s = ren_exp zeta_typ zeta_exp s :=
       congr_exp_tapp
         (extRen_exp xi_typ xi_exp zeta_typ zeta_exp Eq_typ Eq_exp s0)
         (extRen_typ xi_typ zeta_typ Eq_typ s1)
-  | exp_tabs s0 =>
-      congr_exp_tabs
+  | exp_tabs s0 s1 =>
+      congr_exp_tabs (extRen_typ xi_typ zeta_typ Eq_typ s0)
         (extRen_exp (upRen_typ_typ xi_typ) (upRen_typ_exp xi_exp)
            (upRen_typ_typ zeta_typ) (upRen_typ_exp zeta_exp)
-           (upExtRen_typ_typ _ _ Eq_typ) (upExtRen_typ_exp _ _ Eq_exp) s0)
+           (upExtRen_typ_typ _ _ Eq_typ) (upExtRen_typ_exp _ _ Eq_exp) s1)
   end.
 
 Lemma upExt_typ_exp (sigma : nat -> exp) (tau : nat -> exp)
@@ -709,11 +728,11 @@ subst_exp sigma_typ sigma_exp s = subst_exp tau_typ tau_exp s :=
       congr_exp_tapp
         (ext_exp sigma_typ sigma_exp tau_typ tau_exp Eq_typ Eq_exp s0)
         (ext_typ sigma_typ tau_typ Eq_typ s1)
-  | exp_tabs s0 =>
-      congr_exp_tabs
+  | exp_tabs s0 s1 =>
+      congr_exp_tabs (ext_typ sigma_typ tau_typ Eq_typ s0)
         (ext_exp (up_typ_typ sigma_typ) (up_typ_exp sigma_exp)
            (up_typ_typ tau_typ) (up_typ_exp tau_exp)
-           (upExt_typ_typ _ _ Eq_typ) (upExt_typ_exp _ _ Eq_exp) s0)
+           (upExt_typ_typ _ _ Eq_typ) (upExt_typ_exp _ _ Eq_exp) s1)
   end.
 
 Lemma up_ren_ren_typ_exp (xi : nat -> nat) (zeta : nat -> nat)
@@ -767,12 +786,12 @@ ren_exp rho_typ rho_exp s :=
         (compRenRen_exp xi_typ xi_exp zeta_typ zeta_exp rho_typ rho_exp
            Eq_typ Eq_exp s0)
         (compRenRen_typ xi_typ zeta_typ rho_typ Eq_typ s1)
-  | exp_tabs s0 =>
-      congr_exp_tabs
+  | exp_tabs s0 s1 =>
+      congr_exp_tabs (compRenRen_typ xi_typ zeta_typ rho_typ Eq_typ s0)
         (compRenRen_exp (upRen_typ_typ xi_typ) (upRen_typ_exp xi_exp)
            (upRen_typ_typ zeta_typ) (upRen_typ_exp zeta_exp)
            (upRen_typ_typ rho_typ) (upRen_typ_exp rho_exp)
-           (up_ren_ren _ _ _ Eq_typ) Eq_exp s0)
+           (up_ren_ren _ _ _ Eq_typ) Eq_exp s1)
   end.
 
 Lemma up_ren_subst_typ_exp (xi : nat -> nat) (tau : nat -> exp)
@@ -830,12 +849,12 @@ subst_exp theta_typ theta_exp s :=
         (compRenSubst_exp xi_typ xi_exp tau_typ tau_exp theta_typ theta_exp
            Eq_typ Eq_exp s0)
         (compRenSubst_typ xi_typ tau_typ theta_typ Eq_typ s1)
-  | exp_tabs s0 =>
-      congr_exp_tabs
+  | exp_tabs s0 s1 =>
+      congr_exp_tabs (compRenSubst_typ xi_typ tau_typ theta_typ Eq_typ s0)
         (compRenSubst_exp (upRen_typ_typ xi_typ) (upRen_typ_exp xi_exp)
            (up_typ_typ tau_typ) (up_typ_exp tau_exp) (up_typ_typ theta_typ)
            (up_typ_exp theta_exp) (up_ren_subst_typ_typ _ _ _ Eq_typ)
-           (up_ren_subst_typ_exp _ _ _ Eq_exp) s0)
+           (up_ren_subst_typ_exp _ _ _ Eq_exp) s1)
   end.
 
 Lemma up_subst_ren_typ_exp (sigma : nat -> exp) (zeta_typ : nat -> nat)
@@ -930,13 +949,14 @@ subst_exp theta_typ theta_exp s :=
         (compSubstRen_exp sigma_typ sigma_exp zeta_typ zeta_exp theta_typ
            theta_exp Eq_typ Eq_exp s0)
         (compSubstRen_typ sigma_typ zeta_typ theta_typ Eq_typ s1)
-  | exp_tabs s0 =>
+  | exp_tabs s0 s1 =>
       congr_exp_tabs
+        (compSubstRen_typ sigma_typ zeta_typ theta_typ Eq_typ s0)
         (compSubstRen_exp (up_typ_typ sigma_typ) (up_typ_exp sigma_exp)
            (upRen_typ_typ zeta_typ) (upRen_typ_exp zeta_exp)
            (up_typ_typ theta_typ) (up_typ_exp theta_exp)
            (up_subst_ren_typ_typ _ _ _ Eq_typ)
-           (up_subst_ren_typ_exp _ _ _ _ Eq_exp) s0)
+           (up_subst_ren_typ_exp _ _ _ _ Eq_exp) s1)
   end.
 
 Lemma up_subst_subst_typ_exp (sigma : nat -> exp) (tau_typ : nat -> typ)
@@ -1033,12 +1053,13 @@ subst_exp theta_typ theta_exp s :=
         (compSubstSubst_exp sigma_typ sigma_exp tau_typ tau_exp theta_typ
            theta_exp Eq_typ Eq_exp s0)
         (compSubstSubst_typ sigma_typ tau_typ theta_typ Eq_typ s1)
-  | exp_tabs s0 =>
+  | exp_tabs s0 s1 =>
       congr_exp_tabs
+        (compSubstSubst_typ sigma_typ tau_typ theta_typ Eq_typ s0)
         (compSubstSubst_exp (up_typ_typ sigma_typ) (up_typ_exp sigma_exp)
            (up_typ_typ tau_typ) (up_typ_exp tau_exp) (up_typ_typ theta_typ)
            (up_typ_exp theta_exp) (up_subst_subst_typ_typ _ _ _ Eq_typ)
-           (up_subst_subst_typ_exp _ _ _ _ Eq_exp) s0)
+           (up_subst_subst_typ_exp _ _ _ _ Eq_exp) s1)
   end.
 
 Lemma renRen_exp (xi_typ : nat -> nat) (xi_exp : nat -> nat)
@@ -1171,12 +1192,12 @@ Fixpoint rinst_inst_exp (xi_typ : nat -> nat) (xi_exp : nat -> nat)
       congr_exp_tapp
         (rinst_inst_exp xi_typ xi_exp sigma_typ sigma_exp Eq_typ Eq_exp s0)
         (rinst_inst_typ xi_typ sigma_typ Eq_typ s1)
-  | exp_tabs s0 =>
-      congr_exp_tabs
+  | exp_tabs s0 s1 =>
+      congr_exp_tabs (rinst_inst_typ xi_typ sigma_typ Eq_typ s0)
         (rinst_inst_exp (upRen_typ_typ xi_typ) (upRen_typ_exp xi_exp)
            (up_typ_typ sigma_typ) (up_typ_exp sigma_exp)
            (rinstInst_up_typ_typ _ _ Eq_typ)
-           (rinstInst_up_typ_exp _ _ Eq_exp) s0)
+           (rinstInst_up_typ_exp _ _ Eq_exp) s1)
   end.
 
 Lemma rinstInst'_exp (xi_typ : nat -> nat) (xi_exp : nat -> nat) (s : exp) :
