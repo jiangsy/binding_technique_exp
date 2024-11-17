@@ -5,6 +5,7 @@ From Hammer Require Import Tactics.
 Require Import systemf.lngen.def_ott.
 Require Import systemf.lngen.prop_ln.
 Require Import common.ltac_ln.
+Require Import common.prop_ln.
 Require Import systemf.lngen.def_extra.
 
 From Coq Require Import ssreflect ssrfun ssrbool.
@@ -39,27 +40,6 @@ Qed.
 
 Hint Constructors uniq : core.
 Hint Resolve typing_lc_typ typing_lc_exp : core.
-
-Ltac unify_binds :=
-  match goal with
-  | H_1 : binds ?X ?b1 ?θ, H_2 : binds ?X ?b2 ?θ |- _ =>
-    let H_3 := fresh "H" in
-    apply binds_unique with (a:=b2) in H_1 as H_3; eauto; dependent destruction H_3; subst
-  end.
-
-Lemma binds_remove_mid_diff_bind {A} : forall ls1 ls2 X Y (b1 b2 : A),
-  binds X b1 (ls2 ++ (Y, b2) :: ls1) ->
-  b1 <> b2 ->
-  binds X b1 (ls2 ++ ls1).
-Proof.  
-  intros. induction ls2; simpl in *; eauto.
-  - inversion H. dependent destruction H1.
-    + contradiction.
-    + auto. 
-  - destruct a. inversion H.
-    + dependent destruction H1. auto.
-    + auto.
-Qed.
 
 Lemma typing_weakening Γ1 Γ2 Γ3 t A :
   (Γ1 ++ Γ3) ⊢ t : A ->
@@ -159,7 +139,7 @@ Proof.
 Qed.
 
 Lemma map_subst_tvar_in_entry_fresh_eq Γ X B :
-  X `notin` tvar_in_entries (Γ) ->
+  X `notin` tvar_in_entries Γ ->
   map (subst_typ_in_entry B X) Γ = Γ.
 Proof.
   intros. induction Γ; simpl; eauto.
