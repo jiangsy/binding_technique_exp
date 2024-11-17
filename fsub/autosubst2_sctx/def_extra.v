@@ -15,6 +15,12 @@ Definition ren_entry (ξ : nat -> nat) (e : entry) : entry :=
   | entry_tvar A => entry_tvar (A ⟨ ξ ⟩)
   end.
 
+Definition subst_entry (σ : nat -> typ) (e : entry) : entry :=
+  match e with
+  | entry_var A => entry_var (A [σ])
+  | entry_tvar A => entry_tvar (A [σ])
+  end.
+
 Inductive lookup_tvar : nat -> list entry -> typ -> Prop :=
 | here_tvar A Δ : lookup_tvar 0 ((entry_tvar A) :: Δ) (A ⟨ ↑ ⟩) 
 | skip_var n Δ A B : lookup_tvar n Δ A -> lookup_tvar n (cons (entry_var B) Δ) A

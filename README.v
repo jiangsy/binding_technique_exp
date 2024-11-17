@@ -1,10 +1,12 @@
 Require Import common.prop_as_core.
 Require Import common.prop_as_unscoped.
+
 Require stlc.autosubst2.prop_type_safety.
 Require stlc.lngen.prop_type_safety.
 Require systemf.autosubst2.prop_type_safety.
 Require systemf.lngen.prop_type_safety.
 Require fsub.autosubst2_dctx.prop_typing.
+
 
 Section stlc.
 

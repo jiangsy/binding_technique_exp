@@ -171,5 +171,3 @@ Proof.
       * eapply subtyping_subst; eauto.
         hauto unfold:ctx_tvar_subst,wf_ctx inv:lookup_tvar ctrs:subtyping use:subtyping_reflexivity simp+:asimpl. 
 Qed.
-
-Print Assumptions typing_abs_inv.
