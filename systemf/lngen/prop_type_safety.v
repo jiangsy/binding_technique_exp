@@ -88,6 +88,8 @@ Proof.
     rewrite <- subst_exp_in_exp_open_exp_wrt_typ; eauto.
 Qed.
 
+Hint Rewrite -> subst_typ_in_typ_open_typ_wrt_typ subst_typ_in_exp_open_exp_wrt_typ : ln.
+
 Lemma typing_subst_tvar Γ1 Γ2 X t A B :
   (Γ2 ++ (X, entry_tvar) :: Γ1) ⊢ t : A ->
   uniq (Γ2 ++ (X, entry_tvar) :: Γ1) ->
@@ -112,16 +114,11 @@ Proof.
   - inst_cofinites_for typing_tabs. intros. 
     inst_cofinites_with X0.
     rewrite_env (map (subst_typ_in_entry B X) (((X0, entry_tvar) :: Γ2) ++ Γ1)).
-    replace (open_typ_wrt_typ (subst_typ_in_typ B X A) (typ_var_f X0)) with
-            (subst_typ_in_typ B X (open_typ_wrt_typ A (typ_var_f X0))).
-    replace (open_exp_wrt_typ (subst_typ_in_exp B X t) (typ_var_f X0)) with
-            (subst_typ_in_exp B X (open_exp_wrt_typ t (typ_var_f X0))).
-    eapply H0; eauto.
-    simpl; eauto.
-    rewrite subst_typ_in_exp_open_exp_wrt_typ; eauto.
-    simpl. destruct_eq_atom; eauto.
-    rewrite subst_typ_in_typ_open_typ_wrt_typ; eauto.
-    simpl. destruct_eq_atom; eauto.
+    setoid_rewrite subst_typ_in_exp_open_exp_wrt_typ in H0; auto.
+    setoid_rewrite subst_typ_in_typ_open_typ_wrt_typ in H0; auto.
+    move : H0. move => /(_ _ _ X) => H0.
+    simpl in H0. destruct_eq_atom. 
+    eapply H0; eauto. simpl; eauto.
   - rewrite subst_typ_in_typ_open_typ_wrt_typ; eauto.
     econstructor; eauto.
     eapply subst_typ_in_typ_lc_typ; eauto.
@@ -159,6 +156,8 @@ Proof.
   eapply typing_subst_tvar; eauto.
 Qed.
 
+Hint Rewrite -> subst_typ_in_typ_open_typ_wrt_typ subst_typ_in_exp_open_exp_wrt_typ : ln.
+
 Theorem preservation Γ t t' A : 
   uniq Γ ->
   Γ ⊢ t : A ->
@@ -182,11 +181,9 @@ Proof.
     inversion H4; subst.
     pick fresh X. inst_cofinites_with X.
     eapply typing_subst_tvar0 with (B:=A) in H3; eauto.
-    rewrite subst_typ_in_typ_open_typ_wrt_typ in H3; eauto.
-    simpl in H3. destruct_eq_atom.
+    qsimpl rew:db:ln simp+:destruct_eq_atom. subst.
+    rewrite H4.
     rewrite subst_typ_in_typ_fresh_eq in H3; eauto.
-    rewrite subst_typ_in_exp_open_exp_wrt_typ in H3; eauto.
-    simpl in H3. destruct_eq_atom.
     rewrite subst_typ_in_exp_fresh_eq in H3; eauto.
 Qed.
 
