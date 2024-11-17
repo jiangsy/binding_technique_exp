@@ -73,19 +73,16 @@ Proof.
     eapply binds_remove_mid in H0; eauto using typing.
   - inst_cofinites_for typing_abs; eauto.
     intros. inst_cofinites_with x0.
-    replace (open_exp_wrt_exp (subst_exp_in_exp s x t) (exp_var_f x0)) with
-            (subst_exp_in_exp s x (open_exp_wrt_exp t (exp_var_f x0))).
     rewrite_env (((x0, entry_var A) :: Γ2) ++ Γ1).
-    eapply H1; simpl; eauto.
-    rewrite subst_exp_in_exp_open_exp_wrt_exp; eauto.
-    simpl. destruct_eq_atom; eauto.
+    setoid_rewrite subst_exp_in_exp_open_exp_wrt_exp in H1; eauto.
+    move : H1 => /(_ _ _ x) H1. 
+    simpl in H1. destruct_eq_atom. eapply H1; simpl; eauto.
   - inst_cofinites_for typing_tabs; eauto.
     intros. inst_cofinites_with X.
-    replace (open_exp_wrt_typ (subst_exp_in_exp s x t) (typ_var_f X)) with
-            (subst_exp_in_exp s x (open_exp_wrt_typ t (typ_var_f X))).
     rewrite_env (((X, entry_tvar) :: Γ2) ++ Γ1).
-    eapply H0; simpl; eauto.
-    rewrite <- subst_exp_in_exp_open_exp_wrt_typ; eauto.
+    setoid_rewrite subst_exp_in_exp_open_exp_wrt_typ in H0; eauto.
+    move : H0 => /(_ _ _ x) H0. 
+    simpl in H0. destruct_eq_atom. eapply H0; simpl; eauto.
 Qed.
 
 Hint Rewrite -> subst_typ_in_typ_open_typ_wrt_typ subst_typ_in_exp_open_exp_wrt_typ : ln.
@@ -105,18 +102,16 @@ Proof.
     unify_binds.
   - inst_cofinites_for typing_abs.
     hauto use:subst_typ_in_typ_lc_typ.
-    intros.
+    intros. inst_cofinites_with x.
     rewrite_env (map (subst_typ_in_entry B X) (((x, entry_var A) :: Γ2) ++ Γ1)).
-    replace (open_exp_wrt_exp (subst_typ_in_exp B X t) (exp_var_f x)) with 
-            (subst_typ_in_exp B X (open_exp_wrt_exp t (exp_var_f x))).
-    eapply H1; eauto. simpl; eauto.
-    rewrite subst_typ_in_exp_open_exp_wrt_exp; eauto.
+    setoid_rewrite subst_typ_in_exp_open_exp_wrt_exp in H1; auto.
+    simpl in H1. eapply H1; simpl; eauto.
   - inst_cofinites_for typing_tabs. intros. 
     inst_cofinites_with X0.
     rewrite_env (map (subst_typ_in_entry B X) (((X0, entry_tvar) :: Γ2) ++ Γ1)).
     setoid_rewrite subst_typ_in_exp_open_exp_wrt_typ in H0; auto.
     setoid_rewrite subst_typ_in_typ_open_typ_wrt_typ in H0; auto.
-    move : H0. move => /(_ _ _ X) => H0.
+    move : H0 => /(_ _ _ X) H0.
     simpl in H0. destruct_eq_atom. 
     eapply H0; eauto. simpl; eauto.
   - rewrite subst_typ_in_typ_open_typ_wrt_typ; eauto.
@@ -155,8 +150,6 @@ Proof.
     (apply map_subst_tvar_in_entry_fresh_eq; eauto).
   eapply typing_subst_tvar; eauto.
 Qed.
-
-Hint Rewrite -> subst_typ_in_typ_open_typ_wrt_typ subst_typ_in_exp_open_exp_wrt_typ : ln.
 
 Theorem preservation Γ t t' A : 
   uniq Γ ->
