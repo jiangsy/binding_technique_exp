@@ -35,12 +35,11 @@ Proof.
       eapply IHtyping; simpl; eauto.
   - apply typing_tabs; eauto.
     + eapply wf_typ_narrowing; eauto.
-    + replace (entry_tvar A0 :: list_map (ren_var_entry ↑) (Γ2 ++ entry_tvar B :: Γ1)) with 
-        (((entry_tvar A0 :: list_map (ren_var_entry ↑) Γ2) ++ entry_tvar B :: list_map (ren_var_entry ↑) Γ1)).
-      eapply IHtyping with (A:=A); simpl; eauto. 
-      admit. admit. admit.
+    + replace (entry_tvar A0 :: Γ2 ++ entry_tvar B :: Γ1) with 
+        ((entry_tvar A0 :: Γ2) ++ entry_tvar B :: Γ1) by (simpl; eauto).
+      eapply IHtyping with (A:=A); simpl; eauto.
   - eapply typing_tapp; eauto.
     eapply subtyping_narrowing; eauto. 
   - eapply typing_sub; eauto.
     eapply subtyping_narrowing; eauto. 
-Admitted.
+Qed.
