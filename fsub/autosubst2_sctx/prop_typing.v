@@ -13,6 +13,14 @@ Require Import fsub.autosubst2_sctx.prop_subtyping.
 Import SubstNotations.
 Import UnscopedNotations.
 
+Lemma lookup_var_narrowing Γ1 Γ2 A A' B x :
+  lookup_var x (Γ2 ++ entry_tvar A :: Γ1) B ->
+  lookup_var x (Γ2 ++ entry_tvar A' :: Γ1) B.
+Proof.
+  intros. dependent induction H; 
+    destruct Γ2; hauto ctrs:lookup_var.
+Qed.
+
 Lemma typing_narrowing Γ1 Γ2 A B C t :
   Γ2 ++ (entry_tvar A) :: Γ1 ⊢ t : C ->
   Γ1 ⊢ B <: A ->
@@ -20,14 +28,17 @@ Lemma typing_narrowing Γ1 Γ2 A B C t :
 Proof.
   intro H. dependent induction H; intros; 
     try hauto ctrs:typing.
-  - admit.
+  - hauto ctrs:typing use:lookup_var_narrowing.
   - apply typing_abs.
     + eapply wf_typ_narrowing; eauto.
     + replace (entry_var A0 :: Γ2 ++ (entry_tvar B) :: Γ1) with ((entry_var A0 :: Γ2) ++ (entry_tvar B :: Γ1)) by auto.
       eapply IHtyping; simpl; eauto.
   - apply typing_tabs; eauto.
     + eapply wf_typ_narrowing; eauto.
-    + admit.
+    + replace (entry_tvar A0 :: list_map (ren_var_entry ↑) (Γ2 ++ entry_tvar B :: Γ1)) with 
+        (((entry_tvar A0 :: list_map (ren_var_entry ↑) Γ2) ++ entry_tvar B :: list_map (ren_var_entry ↑) Γ1)).
+      eapply IHtyping with (A:=A); simpl; eauto. 
+      admit. admit. admit.
   - eapply typing_tapp; eauto.
     eapply subtyping_narrowing; eauto. 
   - eapply typing_sub; eauto.

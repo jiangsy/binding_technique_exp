@@ -9,11 +9,11 @@ Import UnscopedNotations.
 
 Definition ctx := list entry.
 
-Definition ren_var_entry (ξ : nat -> nat) (e : entry) : entry :=
+(* Definition ren_var_entry (ξ : nat -> nat) (e : entry) : entry :=
   match e with
   | entry_var A => entry_var (A ⟨ ξ ⟩)
   | entry_tvar A => entry_tvar (A)
-  end.
+  end. *)
 
 (* Definition subst_entry (σ : nat -> typ) (e : entry) : entry :=
   match e with
@@ -80,7 +80,8 @@ Inductive typing : ctx -> exp -> typ -> Prop :=
   Γ ⊢ (exp_app t s) : B
 | typing_tabs : forall Γ t A B,
   Γ ⊢ A ->
-  (entry_tvar A :: (map (ren_var_entry ↑) Γ)) ⊢ t : B ->
+  (* since lookup shift the found bound of var, no need to map (ren_entry ↑) here ? *)
+  (entry_tvar A :: Γ) ⊢ t : B ->
   Γ ⊢ (exp_tabs A t) : (typ_all A B)
 | typing_tapp : forall Γ t A B A' B',
   Γ ⊢ t : (typ_all A B) ->
