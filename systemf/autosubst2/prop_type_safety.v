@@ -15,15 +15,7 @@ Require Import systemf.autosubst2.def_extra.
 Import SubstNotations.
 Import UnscopedNotations.
 
-Definition lookup_fun {T} n (Δ : list T) :=
-  nth_error Δ n.
-
 Hint Constructors lookup : core.
-
-Lemma lookup_iff {T} n (Γ : list T) A : lookup n Γ A -> lookup_fun n Γ = Some A.
-Proof.
-  intros. induction H; eauto.
-Qed.
 
 Lemma lookup_det {U} n (Γ : list U) A B : lookup n Γ A -> lookup n Γ B -> A = B.
 Proof.
