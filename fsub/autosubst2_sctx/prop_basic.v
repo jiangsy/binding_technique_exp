@@ -27,62 +27,62 @@ Proof.
     hauto unfold:ctx_tvar_rename_weak inv:lookup_tvar ctrs:lookup_tvar.
 Qed.
 
-Lemma wf_typ_renaming_tvar Δ Δ' A ξ:
-  Δ ⊢ A ->
-  ctx_tvar_rename_weak Δ Δ' ξ ->
-  Δ' ⊢ A ⟨ ξ ⟩.
+Lemma wf_typ_renaming_tvar Γ Γ' A ξ:
+  Γ ⊢ A ->
+  ctx_tvar_rename_weak Γ Γ' ξ ->
+  Γ' ⊢ A ⟨ ξ ⟩.
 Proof.
-  move: Δ Δ' ξ. induction A; try hauto.
+  move: Γ Γ' ξ. induction A; try hauto.
   - intros. unfold ctx_tvar_rename_weak in *.
     asimpl. simpl in *. 
     hauto inv:lookup_tvar ctrs:lookup_tvar.
 Qed.
 
-Lemma wf_typ_renaming_tvar' Δ Δ' A A' ξ:
-  Δ ⊢ A ->
-  ctx_tvar_rename_weak Δ Δ' ξ ->
+Lemma wf_typ_renaming_tvar' Γ Γ' A A' ξ:
+  Γ ⊢ A ->
+  ctx_tvar_rename_weak Γ Γ' ξ ->
   A' = A ⟨ ξ ⟩ ->
-  Δ' ⊢ A'.
+  Γ' ⊢ A'.
 Proof.
   intros. subst. eapply wf_typ_renaming_tvar; eauto.
 Qed.
 
-Corollary wf_typ_weakening_tvar0 Δ A B:
-  Δ ⊢ A ->
-  ((entry_tvar B) :: Δ) ⊢ A ⟨↑⟩.
+Corollary wf_typ_weakening_tvar0 Γ A B:
+  Γ ⊢ A ->
+  ((entry_tvar B) :: Γ) ⊢ A ⟨↑⟩.
 Proof.
   hauto unfold:ctx_tvar_rename_weak inv:lookup_tvar ctrs:lookup_tvar
     use:wf_typ_renaming_tvar.
 Qed.
 
-Lemma wf_typ_subst_tvar Δ Δ' A σ:
-  Δ ⊢ A ->
-  ctx_tvar_subst_wf Δ Δ' σ ->
-  Δ' ⊢ A [ σ ].
+Lemma wf_typ_subst_tvar Γ Γ' A σ:
+  Γ ⊢ A ->
+  ctx_tvar_subst_wf Γ Γ' σ ->
+  Γ' ⊢ A [ σ ].
 Proof.
-  move: Δ Δ' σ. induction A; intros; 
+  move: Γ Γ' σ. induction A; intros; 
     try hauto unfold:ctx_tvar_subst_wf.
   - asimpl. simpl in *; split.
     + hauto. 
     + eapply IHA2; hauto unfold:ctx_tvar_subst_wf use:wf_typ_weakening_tvar0 inv:lookup_tvar. 
 Qed.
 
-Lemma wf_typ_narrowing : forall Δ1 Δ2 A B C,
-  Δ2 ++ (entry_tvar A) :: Δ1 ⊢ C->
-  Δ2 ++ (entry_tvar B) :: Δ1 ⊢ C.
+Lemma wf_typ_narrowing : forall Γ1 Γ2 A B C,
+  Γ2 ++ (entry_tvar A) :: Γ1 ⊢ C->
+  Γ2 ++ (entry_tvar B) :: Γ1 ⊢ C.
 Proof.
   intros. eapply wf_typ_renaming_tvar' with (ξ:=id) in H; eauto.
   - eapply ctx_tvar_rename_weak_rebounding; eauto.
   - asimpl; auto.
 Qed.
 
-Lemma sub_renaming_tvar Δ Δ' A B ξ :
-  Δ ⊢ A <: B ->
-  ctx_tvar_rename Δ Δ' ξ ->
-  Δ' ⊢ A ⟨ ξ ⟩ <: B ⟨ ξ ⟩.
+Lemma sub_renaming_tvar Γ Γ' A B ξ :
+  Γ ⊢ A <: B ->
+  ctx_tvar_rename Γ Γ' ξ ->
+  Γ' ⊢ A ⟨ ξ ⟩ <: B ⟨ ξ ⟩.
 Proof.
   move => H.
-  move: Δ' ξ. elim: Δ A B / H; intros; 
+  move: Γ' ξ. elim: Γ A B / H; intros; 
     try hauto unfold:ctx_tvar_rename,ctx_tvar_rename_weak ctrs:subtyping use:wf_typ_renaming_tvar.
   - asimpl. eapply sub_all; try hauto unfold:ctx_tvar_rename,ctx_tvar_rename_weak ctrs:subtyping use:wf_typ_renaming_tvar.
     eapply H0.
@@ -94,16 +94,16 @@ Proof.
       constructor; eauto.
 Qed.
 
-Corollary sub_weakening_tvar0 Δ A B C:
-  Δ ⊢ A <: B ->
-  (entry_tvar C :: Δ) ⊢ A ⟨↑⟩ <: B ⟨↑⟩.
+Corollary sub_weakening_tvar0 Γ A B C:
+  Γ ⊢ A <: B ->
+  (entry_tvar C :: Γ) ⊢ A ⟨↑⟩ <: B ⟨↑⟩.
 Proof.
   hauto unfold:ctx_tvar_rename ctrs:subtyping use:sub_renaming_tvar ctrs:lookup_tvar.
 Qed.
 
-Lemma sub_wf_typ Δ A B :
-  Δ ⊢ A <: B ->
-  (Δ ⊢ A) /\ (Δ ⊢ B).
+Lemma sub_wf_typ Γ A B :
+  Γ ⊢ A <: B ->
+  (Γ ⊢ A) /\ (Γ ⊢ B).
 Proof.
   intros; induction H; try hauto.
   - simpl; repeat split; try hauto.
@@ -112,16 +112,16 @@ Proof.
       inv:lookup_tvar ctrs:lookup_tvar use:wf_typ_renaming_tvar.
 Qed.
 
-Corollary sub_wf_typ1 Δ A B :
-  Δ ⊢ A <: B ->
-  Δ ⊢ A.
+Corollary sub_wf_typ1 Γ A B :
+  Γ ⊢ A <: B ->
+  Γ ⊢ A.
 Proof.
   hauto use:sub_wf_typ.
 Qed.
 
-Corollary sub_wf_typ2 Δ A B :
-  Δ ⊢ A <: B ->
-  Δ ⊢ B.
+Corollary sub_wf_typ2 Γ A B :
+  Γ ⊢ A <: B ->
+  Γ ⊢ B.
 Proof.
   hauto use:sub_wf_typ.
 Qed.

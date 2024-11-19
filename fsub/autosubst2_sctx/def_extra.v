@@ -9,60 +9,60 @@ Import UnscopedNotations.
 
 Definition ctx := list entry.
 
-Definition ren_entry (ξ : nat -> nat) (e : entry) : entry :=
+Definition ren_var_entry (ξ : nat -> nat) (e : entry) : entry :=
   match e with
   | entry_var A => entry_var (A ⟨ ξ ⟩)
-  | entry_tvar A => entry_tvar (A ⟨ ξ ⟩)
+  | entry_tvar A => entry_tvar (A)
   end.
 
-Definition subst_entry (σ : nat -> typ) (e : entry) : entry :=
+(* Definition subst_entry (σ : nat -> typ) (e : entry) : entry :=
   match e with
   | entry_var A => entry_var (A [σ])
   | entry_tvar A => entry_tvar (A [σ])
-  end.
+  end. *)
 
 Inductive lookup_tvar : nat -> list entry -> typ -> Prop :=
-| here_tvar A Δ : lookup_tvar 0 ((entry_tvar A) :: Δ) (A ⟨ ↑ ⟩) 
-| skip_var n Δ A B : lookup_tvar n Δ A -> lookup_tvar n (cons (entry_var B) Δ) A
-| there_tvar n Δ A B : lookup_tvar n Δ A -> lookup_tvar (S n) (cons (entry_tvar B) Δ) (A ⟨ ↑ ⟩).
+| here_tvar A Γ : lookup_tvar 0 ((entry_tvar A) :: Γ) (A ⟨ ↑ ⟩) 
+| skip_var n Γ A B : lookup_tvar n Γ A -> lookup_tvar n (cons (entry_var B) Γ) A
+| there_tvar n Γ A B : lookup_tvar n Γ A -> lookup_tvar (S n) (cons (entry_tvar B) Γ) (A ⟨ ↑ ⟩).
 
 Inductive lookup_var : nat -> list entry -> typ -> Prop :=
 | here_var A Γ : lookup_var 0 ((entry_var A) :: Γ) A 
 | skip_tvar n Γ A B : lookup_var n Γ A -> lookup_var n (cons (entry_tvar B) Γ) (A ⟨ ↑ ⟩)
 | there_var n Γ A B : lookup_var n Γ A -> lookup_var (S n) (cons (entry_var B) Γ) A.
 
-Fixpoint wf_typ Δ A := match A with
-  | typ_var X => exists B, lookup_tvar X Δ B
+Fixpoint wf_typ Γ A := match A with
+  | typ_var X => exists B, lookup_tvar X Γ B
   | typ_top => True
-  | typ_arr A B => wf_typ Δ A /\ wf_typ Δ B
-  | typ_all A B => wf_typ Δ A /\ wf_typ ((entry_tvar A) :: Δ) B
+  | typ_arr A B => wf_typ Γ A /\ wf_typ Γ B
+  | typ_all A B => wf_typ Γ A /\ wf_typ ((entry_tvar A) :: Γ) B
 end.
 
-Notation "Δ ⊢ A" := (wf_typ Δ A) (at level 99).
+Notation "Γ ⊢ A" := (wf_typ Γ A) (at level 99).
 
-Reserved Notation "Δ ⊢ A <: B" 
+Reserved Notation "Γ ⊢ A <: B" 
   (at level 99, A at next level, no associativity).
 Inductive subtyping : ctx -> typ -> typ -> Prop :=
-| sub_top Δ A :
-  Δ ⊢ A ->
-  Δ ⊢ A <: typ_top
-| sub_tvar_refl Δ X :
-  Δ ⊢ typ_var X ->
-  Δ ⊢ typ_var X <: typ_var X
-| sub_tvar_bound Δ X A B: 
-  lookup_tvar X Δ A ->
-  Δ ⊢ A <: B ->
-  Δ ⊢ typ_var X <: B
-| sub_arrow Δ A1 A2 B1 B2 : 
-  Δ ⊢ B1 <: A1 ->
-  Δ ⊢ A2 <: B2 ->
-  Δ ⊢ (typ_arr A1 A2) <: (typ_arr B1 B2)
-| sub_all Δ A1 A2 B1 B2
-  (Hwf : Δ ⊢ B1) 
-  (Hsub1 : Δ ⊢ B1 <: A1)
-  (Hsub2 : ((entry_tvar B1) :: Δ) ⊢ A2 <: B2) :
-  Δ ⊢ (typ_all A1 A2) <: (typ_all B1 B2)
-where "Δ ⊢ A <: B" := (subtyping Δ A B).
+| sub_top Γ A :
+  Γ ⊢ A ->
+  Γ ⊢ A <: typ_top
+| sub_tvar_refl Γ X :
+  Γ ⊢ typ_var X ->
+  Γ ⊢ typ_var X <: typ_var X
+| sub_tvar_bound Γ X A B: 
+  lookup_tvar X Γ A ->
+  Γ ⊢ A <: B ->
+  Γ ⊢ typ_var X <: B
+| sub_arrow Γ A1 A2 B1 B2 : 
+  Γ ⊢ B1 <: A1 ->
+  Γ ⊢ A2 <: B2 ->
+  Γ ⊢ (typ_arr A1 A2) <: (typ_arr B1 B2)
+| sub_all Γ A1 A2 B1 B2
+  (Hwf : Γ ⊢ B1) 
+  (Hsub1 : Γ ⊢ B1 <: A1)
+  (Hsub2 : ((entry_tvar B1) :: Γ) ⊢ A2 <: B2) :
+  Γ ⊢ (typ_all A1 A2) <: (typ_all B1 B2)
+where "Γ ⊢ A <: B" := (subtyping Γ A B).
 
 Reserved Notation "Γ ⊢ t : A" 
   (at level 99, t at next level, no associativity).
@@ -80,7 +80,7 @@ Inductive typing : ctx -> exp -> typ -> Prop :=
   Γ ⊢ (exp_app t s) : B
 | typing_tabs : forall Γ t A B,
   Γ ⊢ A ->
-  (entry_tvar A :: (map (ren_entry ↑) Γ)) ⊢ t : B ->
+  (entry_tvar A :: (map (ren_var_entry ↑) Γ)) ⊢ t : B ->
   Γ ⊢ (exp_tabs A t) : (typ_all A B)
 | typing_tapp : forall Γ t A B A' B',
   Γ ⊢ t : (typ_all A B) ->
