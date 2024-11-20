@@ -43,3 +43,37 @@ Proof.
   - eapply typing_sub; eauto.
     eapply subtyping_narrowing; eauto. 
 Qed.
+
+Definition ctx_var_subst Γ Γ' σ τ :=
+  forall x A, lookup_var x Γ A -> (Γ' ⊢ τ x : A [σ]).
+
+Lemma typing_subst Γ Γ' A t σ τ :
+  Γ ⊢ t : A ->
+  ctx_tvar_subst Γ Γ' σ ->
+  ctx_var_subst Γ Γ' σ τ -> 
+  Γ' ⊢ t [σ;τ] : A [σ] .
+Proof.
+  move => Hty. move : Γ' σ τ.
+  induction Hty; intros; asimpl; try hauto ctrs:typing.
+  - eapply typing_abs; eauto. 
+    + admit.
+    + eapply IHHty; eauto.
+      * unfold ctx_var_subst in *. intros.
+        unfold ctx_tvar_subst. intros. 
+        inversion H2; subst; asimpl; eauto. 
+        eapply sub_renaming_var0; eauto.
+      * unfold ctx_var_subst. intros.
+        inversion H2; subst; asimpl; try hauto ctrs:typing, lookup_var.
+        unfold ctx_var_subst in *. auto.
+        admit.
+  - eapply typing_tabs; eauto.
+    + admit.
+    + eapply IHHty; eauto. 
+      * admit. 
+      * admit.
+  - asimpl. subst.
+    eapply typing_tapp with (A:=A [σ]) (B:=B [up_typ_typ σ]); asimpl; eauto. 
+    eapply subtyping_subst; eauto.
+  - eapply typing_sub with (A:=A [σ]); eauto.
+    eapply subtyping_subst; eauto.
+Admitted.

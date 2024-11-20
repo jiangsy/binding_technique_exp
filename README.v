@@ -6,6 +6,7 @@ Require stlc.lngen.prop_type_safety.
 Require systemf.autosubst2.prop_type_safety.
 Require systemf.lngen.prop_type_safety.
 Require fsub.autosubst2_dctx.prop_typing.
+Require fsub.autosubst2_sctx.prop_typing.
 
 
 Section stlc.
@@ -76,7 +77,7 @@ End systemf.
 
 Section fsub.
 
-  Section autosubst2.
+  Section autosubst2_dctx.
     Import fsub.autosubst2_dctx.def_as2.
     Import fsub.autosubst2_dctx.def_extra.
     Import fsub.autosubst2_dctx.prop_typing.
@@ -88,6 +89,14 @@ Section fsub.
     Print Assumptions preservation. 
     Check progress.
     Print Assumptions progress.
-  End autosubst2.
+  End autosubst2_dctx.
+
+  (* for reference, this is another version using combined context, with plain De Brujin *)
+  (* https://www.seas.upenn.edu/~plclub/poplmark/vouillon.html *)
+  Section autosubst2_sctx.
+    Import fsub.autosubst2_sctx.def_as2.
+    Import fsub.autosubst2_sctx.def_extra.
+    Import fsub.autosubst2_sctx.prop_typing.
+  End autosubst2_sctx.
 
 End fsub.
