@@ -56,7 +56,8 @@ Proof.
   move => Hty. move : Γ' σ τ.
   induction Hty; intros; asimpl; try hauto ctrs:typing.
   - eapply typing_abs; eauto. 
-    + admit.
+    + eapply wf_typ_subst_tvar; eauto.
+      hauto unfold:ctx_tvar_subst_wf,ctx_tvar_subst use:sub_wf_typ1,sub_wf_typ2.
     + eapply IHHty; eauto.
       * unfold ctx_var_subst in *. intros.
         unfold ctx_tvar_subst. intros. 
@@ -64,16 +65,27 @@ Proof.
         eapply sub_renaming_var0; eauto.
       * unfold ctx_var_subst. intros.
         inversion H2; subst; asimpl; try hauto ctrs:typing, lookup_var.
-        unfold ctx_var_subst in *. auto.
-        admit.
+        eapply typing_weakening_var0; eauto.
   - eapply typing_tabs; eauto.
-    + admit.
+    + eapply wf_typ_subst_tvar; eauto.
+      hauto unfold:ctx_tvar_subst_wf,ctx_tvar_subst use:sub_wf_typ1,sub_wf_typ2.
     + eapply IHHty; eauto. 
-      * admit. 
-      * admit.
+      * unfold ctx_tvar_subst in *. intros. 
+        inversion H2; subst; asimpl; eauto.
+        eapply sub_tvar_bound; eauto using lookup_tvar.
+        replace (subst_typ (σ >> ren_typ ↑) A) with (A [σ] ⟨ ↑ ⟩) by (asimpl; auto).
+        eapply sub_weakening_tvar0. eapply subtyping_reflexivity.
+        eapply wf_typ_subst_tvar; eauto.
+        hauto unfold:ctx_tvar_subst_wf,ctx_tvar_subst use:sub_wf_typ1,sub_wf_typ2.
+        replace (subst_typ (σ >> ren_typ ↑) A1) with (A1 [σ] ⟨ ↑ ⟩) by (asimpl; auto).
+        eapply sub_weakening_tvar0. eauto.
+      * unfold ctx_var_subst in *. intros.
+        inversion H2; subst; asimpl; eauto.
+        replace (subst_typ (σ >> ren_typ ↑) A1) with (A1 [σ] ⟨ ↑ ⟩) by (asimpl; auto).
+        eapply typing_weakening_tvar0; eauto.
   - asimpl. subst.
     eapply typing_tapp with (A:=A [σ]) (B:=B [up_typ_typ σ]); asimpl; eauto. 
     eapply subtyping_subst; eauto.
   - eapply typing_sub with (A:=A [σ]); eauto.
     eapply subtyping_subst; eauto.
-Admitted.
+Qed.

@@ -204,3 +204,22 @@ Proof.
   - eapply typing_sub; eauto.
     eapply sub_renaming_tvar; eauto.
 Qed.
+
+Corollary typing_weakening_tvar0 Γ t A B:
+  Γ ⊢ t : A ->
+  (entry_tvar B :: Γ) ⊢ t ⟨↑;id⟩ : A ⟨↑⟩.
+Proof.
+  intros. eapply typing_renaming; eauto.
+  - hauto unfold:ctx_tvar_rename use:lookup_tvar. 
+  - hauto unfold:ctx_var_rename use:lookup_var.
+Qed.
+
+Corollary typing_weakening_var0 Γ t A B:
+  Γ ⊢ t : A ->
+  (entry_var B :: Γ) ⊢ t ⟨id;↑⟩ : A.
+Proof.
+  intros. replace (A) with (ren_typ id A) by (asimpl; auto). 
+    eapply typing_renaming; eauto.
+  - hauto unfold:ctx_tvar_rename ctrs:lookup_tvar simp+:asimpl.
+  - hauto unfold:ctx_var_rename ctrs:lookup_var simp+:asimpl.
+Qed.
