@@ -78,54 +78,6 @@ Proof.
   - hauto.
 Qed.
 
-(* Fixpoint occurs_free' (x k : nat) (t : exp) : Prop :=
-  match t with 
-  | exp_var i => x = i /\ x >= k
-  | exp_app s1 s2 => occurs_free' x k s1 \/ occurs_free' x k s2
-  | exp_abs s => occurs_free' x (S k) s 
-  | exp_unit => False
-  end.
-
-Definition ctx_free_var_rename' {T} ζ Γ Δ t :=
-  forall i (A : T), occurs_free' i 0 t -> lookup i Γ A -> lookup (ζ i) Δ A.
-
-Theorem typing_renaming'' Γ t A : 
-  Γ ⊢ t : A ->
-  forall Δ ζ,
-    ctx_free_var_rename' ζ Γ Δ t ->
-    Δ ⊢ t ⟨ζ⟩ : A.
-Proof.
-  intros H. induction H; intros; asimpl; eauto.
-  - apply typing_var. unfold ctx_free_var_rename' in H0.
-    eapply H0; simpl; eauto. lia. 
-  - apply typing_abs. eapply IHtyping; eauto.
-    unfold ctx_free_var_rename' in *. intros.
-    inversion H2; subst; asimpl; eauto. econstructor.
-    eapply H0; eauto. simpl. admit.
-  - unfold ctx_free_var_rename' in *.  simpl in *. 
-    eapply typing_app; eauto.
-Abort. *)
-
-(* Lemma occurs_free_false' t i :
-  occurs_free i (t ⟨fun x => 1+ i + x⟩) -> False.
-Proof.
-  move : i. induction t; simpl in *; intros; auto.
-  - admit.
-  - eapply IHt with (i := S i); eauto. admit.
-  - hauto.
-Abort.
-
-
-
-Lemma occurs_free_0_shift_false2 t :
-  occurs_free 0 (t ⟨ ↑ ⟩) -> False.
-Proof.
-  intro. induction t; simpl in *.
-  - admit.
-  - asimpl in H.
-Qed. *)
-
-
 Lemma occurs_free_0_shift_false t :
   occurs_free 0 (t ⟨↑⟩) -> False.
 Proof.
