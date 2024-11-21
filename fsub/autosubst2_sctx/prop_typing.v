@@ -89,3 +89,80 @@ Proof.
   - eapply typing_sub with (A:=A [σ]); eauto.
     eapply subtyping_subst; eauto.
 Qed.
+
+Definition wf_ctx Γ :=
+  forall X A, lookup_tvar X Γ A -> Γ ⊢ A.
+
+Corollary typing_subst_term Γ Γ' A t τ :
+  Γ ⊢ t : A ->
+  wf_ctx Γ ->
+  ctx_var_subst Γ Γ' typ_var τ ->
+  ctx_tvar_subst Γ Γ' typ_var ->
+  Γ' ⊢ t [typ_var;τ] : A.
+Proof.
+  intros. replace A with (A [typ_var]) by (asimpl; auto).
+  eapply typing_subst; eauto.
+Qed.
+
+Theorem progress t A :
+  nil ⊢ t : A ->
+  is_value t \/ exists t', t ⤳ t'.
+Proof.
+Admitted.
+
+Lemma typing_abs_inv Γ A A' B C t :
+  Γ ⊢ exp_abs A t : B ->
+  Γ ⊢ B <: typ_arr A' C ->
+  ((Γ ⊢ A' <: A) /\ (exists C', ((entry_var A :: Γ) ⊢ t : C') /\ (Γ ⊢ C' <: C))).
+Proof.
+  move => H. move : C A'. dependent induction H; intros; try hauto ctrs:typing.
+  - inversion H1; eauto.
+  - eapply IHtyping; eauto.
+    eapply subtyping_transitivity; eauto.
+Qed.
+
+Lemma typing_tabs_inv Γ A A' B C t :
+  Γ ⊢ exp_tabs A t : B ->
+  Γ ⊢ B <: typ_all A' C ->
+  ((Γ ⊢ A' <: A) /\ (exists C', ((entry_tvar A'::Γ) ⊢ t : C') /\ ((entry_tvar A'::Γ) ⊢ C' <: C))).
+Proof.
+  move => H. move : C A'. 
+    dependent induction H; intros; try hauto ctrs:typing.
+  - inversion H1; subst; split; eauto. eexists; split; eauto.
+    eapply (typing_narrowing _ nil); eauto.
+  - eauto using subtyping_transitivity.
+Qed.
+
+Theorem preservation Γ t A t' :
+  Γ ⊢ t : A ->
+  wf_ctx Γ ->
+  t ⤳ t' ->
+  Γ ⊢ t' : A.
+Proof.
+  move => Hty Hwf Hstep. move : Γ A Hty Hwf.
+  induction Hstep; intros; eauto using typing;
+    dependent induction Hty; try hauto ctrs:typing.
+  - inversion Hty1; subst.
+    + eapply typing_subst_term; eauto.
+      * hauto unfold:wf_ctx inv:lookup_tvar use:wf_typ_weakening_var0. 
+      * hauto unfold:ctx_var_subst inv:lookup_var ctrs:lookup_var,typing simp+:asimpl.
+      * hauto unfold:wf_ctx,ctx_tvar_subst inv:lookup_tvar use:subtyping_reflexivity ctrs:subtyping simp+:asimpl.
+    + eapply typing_abs_inv in H1; eauto.
+      ssimpl.
+      eapply typing_sub with (A:=C'); eauto.
+      eapply typing_subst_term; eauto. 
+      * hauto unfold:wf_ctx inv:lookup_tvar use:wf_typ_weakening_var0. 
+      * hauto unfold:ctx_var_subst inv:lookup_var ctrs:lookup_var,typing simp+:asimpl.
+      * hauto unfold:wf_ctx,ctx_tvar_subst inv:lookup_tvar use:subtyping_reflexivity ctrs:subtyping simp+:asimpl.
+  - inversion Hty; subst.
+    + eapply typing_subst; eauto. 
+      * hauto unfold:ctx_tvar_subst,wf_ctx inv:lookup_tvar ctrs:subtyping use:subtyping_reflexivity simp+:asimpl.
+      * hauto unfold:ctx_var_subst inv:lookup_var ctrs:lookup_var,typing simp+:asimpl.
+    + eapply typing_tabs_inv in H1; eauto.
+      ssimpl. eapply typing_sub with (A:=C' [B..]).
+      * eapply typing_subst; eauto.
+        hauto unfold:wf_ctx,ctx_tvar_subst inv:lookup_tvar use:subtyping_reflexivity ctrs:subtyping simp+:asimpl.
+        hauto unfold:ctx_var_subst inv:lookup_var ctrs:lookup_var,typing simp+:asimpl.
+      * eapply subtyping_subst; eauto.
+        hauto unfold:wf_ctx,ctx_tvar_subst inv:lookup_tvar use:subtyping_reflexivity ctrs:subtyping simp+:asimpl.
+Qed.

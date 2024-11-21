@@ -55,6 +55,15 @@ Proof.
     use:wf_typ_renaming_tvar.
 Qed.
 
+Corollary wf_typ_weakening_var0 Γ A B:
+  Γ ⊢ A ->
+  (entry_var B :: Γ) ⊢ A.
+Proof.
+  intros. replace A with (A ⟨ id ⟩) by (asimpl; auto).
+  hauto unfold:ctx_tvar_rename_weak inv:lookup_tvar ctrs:lookup_tvar
+    use:wf_typ_renaming_tvar.
+Qed.
+
 Lemma wf_typ_subst_tvar Γ Γ' A σ:
   Γ ⊢ A ->
   ctx_tvar_subst_wf Γ Γ' σ ->
