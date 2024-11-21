@@ -59,7 +59,6 @@ autosubst2: ${AUTOSUBST2_OUTS}
 
 %/prop_ln.v: %/def_ott.v
 	lngen-new --coq $@ --coq-ott $(subst /,.,$*).def_ott $*/language.ott
-	# sed -e "s/Require Export .ott./Require Export $(subst /,.,$*).def_ott./g" ${SED_FLAG} $@ 
 
 # a hack to force makefile to detect source file changes
 .FILE_LIST : ${LNGEN_OUTS} FORCE

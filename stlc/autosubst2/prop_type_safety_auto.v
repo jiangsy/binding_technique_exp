@@ -56,12 +56,6 @@ Proof.
   - hauto ctrs:typing unfold:ctx_free_var_rename. 
 Qed.
 
-Fixpoint up_Renexp_k (ξ : nat -> nat) (k : nat) :=
-  match k with 
-  | 0 => ξ
-  | S k' => upRen_exp_exp (up_Renexp_k ξ k')
-  end.
-
 Lemma occurs_free_false t i :
   occurs_free i (t ⟨fun x => if (lt_ge_dec x i) then x else (1 + x)⟩) -> False.
 Proof.
