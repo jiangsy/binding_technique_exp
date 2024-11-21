@@ -3,10 +3,13 @@ Require Import common.prop_as_unscoped.
 Require Import stlc.autosubst2.def_as2.
 Require Import stlc.autosubst2.def_extra.
 
+Require Import Lia.
 From Coq Require Import ssreflect ssrfun ssrbool.
 From Hammer Require Import Tactics.
 Require Import Coq.Program.Equality.
 Require Import List.
+Require Import Coq.Arith.Bool_nat.
+
 
 Definition ctx_var_rename {T} ζ Γ Δ :=
   forall i (A : T), lookup i Γ A -> lookup (ζ i) Δ A.
@@ -24,6 +27,128 @@ Theorem typing_renaming Γ t A:
 Proof.
   intros H. induction H; intros; 
     hauto q:on unfold:ctx_var_rename inv:typing,lookup ctrs:typing,lookup.
+Qed.
+
+Fixpoint occurs_free (x : nat) (t : exp) : Prop :=
+  match t with 
+  | exp_var i => x = i
+  | exp_app s1 s2 => occurs_free x s1 \/ occurs_free x s2
+  | exp_abs s => occurs_free (S x) s
+  | exp_unit => False
+  end.
+
+Definition ctx_free_var_rename {T} ζ Γ Δ t :=
+  forall i (A : T), occurs_free i t -> lookup i Γ A -> lookup (ζ i) Δ A.
+
+Theorem typing_renaming' Γ t A : 
+  Γ ⊢ t : A ->
+  forall Δ ζ,
+    ctx_free_var_rename ζ Γ Δ t ->
+    Δ ⊢ t ⟨ζ⟩ : A.
+Proof.
+  intros H. induction H; intros; asimpl; eauto.
+  - hauto ctrs:typing unfold:ctx_free_var_rename.
+  - apply typing_abs. 
+    eapply IHtyping; eauto.
+    unfold ctx_free_var_rename in *. intros.
+    inversion H2; subst; asimpl; eauto.
+    econstructor. eauto.
+  - hauto ctrs:typing unfold:ctx_free_var_rename. 
+Qed.
+
+Fixpoint up_Renexp_k (ξ : nat -> nat) (k : nat) :=
+  match k with 
+  | 0 => ξ
+  | S k' => upRen_exp_exp (up_Renexp_k ξ k')
+  end.
+
+Lemma occurs_free_false t i :
+  occurs_free i (t ⟨fun x => if (lt_ge_dec x i) then x else (1 + x)⟩) -> False.
+Proof.
+  move : i. induction t; simpl in *; intros; auto.
+  - destruct (lt_ge_dec n i); simpl in H; try lia.
+  - eapply IHt with (i := S i); eauto. asimpl in H.
+    replace (ren_exp (fun x : nat => if is_left (lt_ge_dec x (S i)) then x else S x) t) with
+    (t ⟨0 .: (fun x : nat => if is_left (lt_ge_dec x i) then x else S x) >> S⟩). auto.
+    apply extRen_exp. intros. destruct (lt_ge_dec x (S i)); simpl.
+    + destruct x; simpl; auto.
+      unfold_funcomp. simpl. destruct (lt_ge_dec x i); auto. lia.
+    + destruct x; simpl. lia. unfold_funcomp.
+      simpl. destruct (lt_ge_dec x i); auto. lia.
+  - hauto.
+Qed.
+
+(* Fixpoint occurs_free' (x k : nat) (t : exp) : Prop :=
+  match t with 
+  | exp_var i => x = i /\ x >= k
+  | exp_app s1 s2 => occurs_free' x k s1 \/ occurs_free' x k s2
+  | exp_abs s => occurs_free' x (S k) s 
+  | exp_unit => False
+  end.
+
+Definition ctx_free_var_rename' {T} ζ Γ Δ t :=
+  forall i (A : T), occurs_free' i 0 t -> lookup i Γ A -> lookup (ζ i) Δ A.
+
+Theorem typing_renaming'' Γ t A : 
+  Γ ⊢ t : A ->
+  forall Δ ζ,
+    ctx_free_var_rename' ζ Γ Δ t ->
+    Δ ⊢ t ⟨ζ⟩ : A.
+Proof.
+  intros H. induction H; intros; asimpl; eauto.
+  - apply typing_var. unfold ctx_free_var_rename' in H0.
+    eapply H0; simpl; eauto. lia. 
+  - apply typing_abs. eapply IHtyping; eauto.
+    unfold ctx_free_var_rename' in *. intros.
+    inversion H2; subst; asimpl; eauto. econstructor.
+    eapply H0; eauto. simpl. admit.
+  - unfold ctx_free_var_rename' in *.  simpl in *. 
+    eapply typing_app; eauto.
+Abort. *)
+
+(* Lemma occurs_free_false' t i :
+  occurs_free i (t ⟨fun x => 1+ i + x⟩) -> False.
+Proof.
+  move : i. induction t; simpl in *; intros; auto.
+  - admit.
+  - eapply IHt with (i := S i); eauto. admit.
+  - hauto.
+Abort.
+
+
+
+Lemma occurs_free_0_shift_false2 t :
+  occurs_free 0 (t ⟨ ↑ ⟩) -> False.
+Proof.
+  intro. induction t; simpl in *.
+  - admit.
+  - asimpl in H.
+Qed. *)
+
+
+Lemma occurs_free_0_shift_false t :
+  occurs_free 0 (t ⟨↑⟩) -> False.
+Proof.
+  apply occurs_free_false.
+Qed.
+
+(* 
+https://metacoq.github.io/v1.2-8.16/MetaCoq.PCUIC.Bidirectional.BDStrengthening.html#strengthening 
+seems to be a reference, but too complicated 
+*)
+Corollary typing_strengthening_var0 : forall Γ t A B,
+  (B :: Γ) ⊢ t ⟨↑⟩ : A ->
+  Γ ⊢ t : A.
+Proof.
+  intros.
+  replace t with ((t ⟨↑⟩) ⟨fun x => x - 1⟩).
+  eapply typing_renaming'; eauto.
+  - unfold ctx_free_var_rename. intros.
+    inversion H1; subst; auto.
+    + exfalso. eapply occurs_free_0_shift_false; eauto.
+    + simpl in *. replace (n - 0) with n by lia. auto.
+  - asimpl. replace t with (t ⟨ id ⟩) at 2 by (asimpl; auto).
+    apply extRen_exp; eauto. intros. induction x; simpl; auto.
 Qed.
 
 Corollary typing_weakening : forall Γ t A B,

@@ -140,7 +140,8 @@ Proof.
 Qed.
 
 Lemma typing_subst_tvar0 Γ X t A B :
-  uniq Γ ->
+  (* this condition is automatically satisfied using De Brujin *)
+  uniq Γ -> 
   X `notin` dom (Γ) `union` tvar_in_entries Γ ->
   ((X, entry_tvar) :: Γ) ⊢ t : A ->
   lc_typ B ->
