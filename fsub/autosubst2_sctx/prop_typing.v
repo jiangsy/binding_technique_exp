@@ -104,11 +104,37 @@ Proof.
   eapply typing_subst; eauto.
 Qed.
 
+Lemma value_arr_inv t A B :
+  nil ⊢ t : typ_arr A B ->
+  is_value t ->
+  exists A' t', t = exp_abs A' t'.
+Proof.
+  intros. dependent induction H; simpl;
+    try hauto inv:lookup_var.
+  - inversion H0; subst; eauto. inversion H2.
+Qed.
+
+Lemma value_all_inv t A B :
+  nil ⊢ t : typ_all A B ->
+  is_value t ->
+  exists A' t', t = exp_tabs A' t'.
+Proof.
+  intros. dependent induction H; simpl;
+    try hauto inv:lookup_var.
+  - inversion H0; subst; eauto. inversion H2.
+Qed.
+  
 Theorem progress t A :
   nil ⊢ t : A ->
   is_value t \/ exists t', t ⤳ t'.
 Proof.
-Admitted.
+  intros. dependent induction H; subst; try hauto ctrs:typing.
+  - inversion H.
+  - ssimpl; try hauto ctrs:typing, step.
+    hauto use:value_arr_inv ctrs:step.
+  - ssimpl; try hauto ctrs:typing, step.
+    hauto use:value_all_inv ctrs:step.
+Qed.
 
 Lemma typing_abs_inv Γ A A' B C t :
   Γ ⊢ exp_abs A t : B ->

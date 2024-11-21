@@ -85,29 +85,6 @@ Proof.
   hauto unfold:ctx_tvar_subst,wf_ctx use:subtyping_reflexivity ctrs:subtyping simp+:asimpl.
 Qed.
 
-Lemma typing_abs_inv Δ Γ A A' B C t :
-  Δ ;; Γ ⊢ exp_abs A t : B ->
-  Δ ⊢ B <: typ_arr A' C ->
-  ((Δ ⊢ A' <: A) /\ (exists C', (Δ ;; (A :: Γ) ⊢ t : C') /\ (Δ ⊢ C' <: C))).
-Proof.
-  move => H. move : C A'. dependent induction H; intros; try hauto ctrs:typing.
-  - inversion H1; eauto.
-  - eapply IHtyping; eauto.
-    eapply subtyping_transitivity; eauto.
-Qed.
-
-Lemma typing_tabs_inv Δ Γ A A' B C t :
-  Δ ;; Γ ⊢ exp_tabs A t : B ->
-  Δ ⊢ B <: typ_all A' C ->
-  ((Δ ⊢ A' <: A) /\ (exists C', ((A'::Δ) ;; (map (ren_typ ↑) Γ) ⊢ t : C') /\ (A'::Δ ⊢ C' <: C))).
-Proof.
-  move => H. move : C A'. 
-    dependent induction H; intros; try hauto ctrs:typing.
-  - inversion H1; subst; split; eauto. eexists; split; eauto.
-    eapply (typing_narrowing _ nil); eauto.
-  - eauto using subtyping_transitivity.
-Qed.
-
 Lemma value_arr_inv t A B :
   nil ;; nil ⊢ t : typ_arr A B ->
   is_value t ->
@@ -138,6 +115,29 @@ Proof.
     hauto use:value_arr_inv ctrs:step.
   - ssimpl; try hauto ctrs:typing, step.
     hauto use:value_all_inv ctrs:step.
+Qed.
+
+Lemma typing_abs_inv Δ Γ A A' B C t :
+  Δ ;; Γ ⊢ exp_abs A t : B ->
+  Δ ⊢ B <: typ_arr A' C ->
+  ((Δ ⊢ A' <: A) /\ (exists C', (Δ ;; (A :: Γ) ⊢ t : C') /\ (Δ ⊢ C' <: C))).
+Proof.
+  move => H. move : C A'. dependent induction H; intros; try hauto ctrs:typing.
+  - inversion H1; eauto.
+  - eapply IHtyping; eauto.
+    eapply subtyping_transitivity; eauto.
+Qed.
+
+Lemma typing_tabs_inv Δ Γ A A' B C t :
+  Δ ;; Γ ⊢ exp_tabs A t : B ->
+  Δ ⊢ B <: typ_all A' C ->
+  ((Δ ⊢ A' <: A) /\ (exists C', ((A'::Δ) ;; (map (ren_typ ↑) Γ) ⊢ t : C') /\ (A'::Δ ⊢ C' <: C))).
+Proof.
+  move => H. move : C A'. 
+    dependent induction H; intros; try hauto ctrs:typing.
+  - inversion H1; subst; split; eauto. eexists; split; eauto.
+    eapply (typing_narrowing _ nil); eauto.
+  - eauto using subtyping_transitivity.
 Qed.
 
 Theorem preservation Δ Γ t A t' :

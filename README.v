@@ -97,6 +97,14 @@ Section fsub.
     Import fsub.autosubst2_sctx.def_as2.
     Import fsub.autosubst2_sctx.def_extra.
     Import fsub.autosubst2_sctx.prop_typing.
+
+    Print typing.
+    Print step.
+
+    Check preservation.
+    Print Assumptions preservation. 
+    Check progress.
+    Print Assumptions progress.
   End autosubst2_sctx.
 
 End fsub.
