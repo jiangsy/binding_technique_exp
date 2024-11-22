@@ -40,6 +40,12 @@ Fixpoint occurs_free (x : nat) (t : exp) : Prop :=
 Definition ctx_free_var_rename {T} ζ Γ Δ t :=
   forall i (A : T), occurs_free i t -> lookup i Γ A -> lookup (ζ i) Δ A.
 
+(* 
+https://metacoq.github.io/v1.2-8.16/MetaCoq.PCUIC.Bidirectional.BDStrengthening.html#strengthening 
+seems to be a reference, but too complicated 
+The form of this lemma is similar to the one in Theorem 4.7 in his thesis 
+"Bidirectional Typing in the Calculus of Inductive Constructions"
+*)
 Theorem typing_renaming' Γ t A : 
   Γ ⊢ t : A ->
   forall Δ ζ,
@@ -50,9 +56,7 @@ Proof.
   - hauto ctrs:typing unfold:ctx_free_var_rename.
   - apply typing_abs. 
     eapply IHtyping; eauto.
-    unfold ctx_free_var_rename in *. intros.
-    inversion H2; subst; asimpl; eauto.
-    econstructor. eauto.
+    hauto inv:lookup unfold:ctx_free_var_rename.
   - hauto ctrs:typing unfold:ctx_free_var_rename. 
 Qed.
 
@@ -78,10 +82,6 @@ Proof.
   apply occurs_free_false.
 Qed.
 
-(* 
-https://metacoq.github.io/v1.2-8.16/MetaCoq.PCUIC.Bidirectional.BDStrengthening.html#strengthening 
-seems to be a reference, but too complicated 
-*)
 Corollary typing_strengthening_var0 : forall Γ t A B,
   (B :: Γ) ⊢ t ⟨↑⟩ : A ->
   Γ ⊢ t : A.
@@ -91,8 +91,8 @@ Proof.
   eapply typing_renaming'; eauto.
   - unfold ctx_free_var_rename. intros.
     inversion H1; subst; auto.
-    + exfalso. eapply occurs_free_0_shift_false; eauto.
-    + simpl in *. replace (n - 0) with n by lia. auto.
+    + hauto use:occurs_free_0_shift_false.
+    + replace (S n - 1) with n by lia. auto.
   - asimpl. replace t with (t ⟨ id ⟩) at 2 by (asimpl; auto).
     apply extRen_exp; eauto. intros. induction x; simpl; auto.
 Qed.
@@ -115,7 +115,8 @@ Theorem typing_subst_var Γ t A :
     Δ ⊢ t [τ] : A.
 Proof.
   intro H. induction H; 
-    try hauto q:on unfold!:ctx_var_subst drew:off exh:off inv:typing,lookup ctrs:typing use:typing_weakening limit:200.
+    hauto q:on unfold!:ctx_var_subst drew:off exh:off 
+      inv:typing,lookup ctrs:typing use:typing_weakening depth:3.
 Qed.
 
 Corollary typing_subst_var0 Γ t s A B: 
@@ -124,7 +125,8 @@ Corollary typing_subst_var0 Γ t s A B:
   Γ ⊢ t [s..] : A.
 Proof.
   intros.
-  hauto q:on inv:typing,lookup ctrs:typing,lookup unfold:ctx_var_subst use:typing_subst_var.
+  hauto q:on inv:typing,lookup ctrs:typing,lookup 
+    unfold:ctx_var_subst use:typing_subst_var.
 Qed.
 
 Theorem preservation Γ t t' A : 
