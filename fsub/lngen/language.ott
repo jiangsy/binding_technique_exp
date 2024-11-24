@@ -22,13 +22,13 @@ exp, e, f, g :: exp_ ::=
   | { A2 / X } e1                       :: M :: subst2 {{ coq (open_exp_wrt_typ [[X e1]] [[A2]]) }}
 
 entry, et  :: entry_ ::=
-  | <: T :: :: tvar
-  | : T  :: :: var
+  | <: A :: :: tvar
+  | : A  :: :: var
 
 substitutions
   single A X :: subst_typ_in
   single e x :: subst_exp_in
 
 freevars
-  A X :: ftvar_in
-  e x :: fvar_in
+  A X :: tvar_in
+  e x :: var_in
