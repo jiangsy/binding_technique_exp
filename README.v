@@ -7,6 +7,7 @@ Require systemf.autosubst2.prop_type_safety.
 Require systemf.lngen.prop_type_safety.
 Require fsub.autosubst2_dctx.prop_typing.
 Require fsub.autosubst2_sctx.prop_typing.
+Require fsub.lngen.prop_typing.
 
 
 Section stlc.
@@ -115,5 +116,22 @@ Section fsub.
     Check progress.
     Print Assumptions progress.
   End autosubst2_sctx.
+
+  Section lngen.
+    Goal True. idtac "". idtac "LNgen". idtac "". Abort.
+
+    Import Metalib.Metatheory.
+    Import fsub.lngen.def_ott.
+    Import fsub.lngen.def_extra.
+    Import fsub.lngen.prop_typing.
+
+    Print typing.
+    Print step.
+
+    Check preservation.
+    Print Assumptions preservation. 
+    Check progress.
+    Print Assumptions progress.
+  End lngen.
 
 End fsub.

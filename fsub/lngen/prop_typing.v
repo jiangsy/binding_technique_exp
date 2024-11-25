@@ -124,8 +124,33 @@ Proof.
     rewrite subst_typ_in_typ_fresh_eq in H7; eauto.
 Qed.
 
+Lemma value_arr_inv t A B :
+  nil ⊢ t : typ_arr A B ->
+  is_value t ->
+  exists A' t', t = exp_abs A' t'.
+Proof.
+  intros. dependent induction H; simpl;
+    try hauto.
+  - inversion H0; subst; eauto.
+Qed.
+
+Lemma value_all_inv t A B :
+  nil ⊢ t : typ_all A B ->
+  is_value t ->
+  exists A' t', t = exp_tabs A' t'.
+Proof.
+  intros. dependent induction H; simpl;
+    try hauto.
+  - inversion H0; subst; eauto.
+Qed.
+  
 Theorem progress t A :
   nil ⊢ t : A ->
   is_value t \/ exists t', t ⤳ t'.
 Proof.
-Admitted.
+  intros. dependent induction H; subst; try hauto ctrs:typing.
+  - ssimpl; try hauto ctrs:typing, step.
+    hauto use:value_arr_inv ctrs:step.
+  - ssimpl; try hauto ctrs:typing, step.
+    hauto use:value_all_inv ctrs:step.
+Qed.
