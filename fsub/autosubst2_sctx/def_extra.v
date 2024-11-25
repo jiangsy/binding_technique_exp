@@ -9,18 +9,6 @@ Import UnscopedNotations.
 
 Definition ctx := list entry.
 
-(* Definition ren_var_entry (ξ : nat -> nat) (e : entry) : entry :=
-  match e with
-  | entry_var A => entry_var (A ⟨ ξ ⟩)
-  | entry_tvar A => entry_tvar (A)
-  end. *)
-
-(* Definition subst_entry (σ : nat -> typ) (e : entry) : entry :=
-  match e with
-  | entry_var A => entry_var (A [σ])
-  | entry_tvar A => entry_tvar (A [σ])
-  end. *)
-
 Inductive lookup_tvar : nat -> list entry -> typ -> Prop :=
 | here_tvar A Γ : lookup_tvar 0 ((entry_tvar A) :: Γ) (A ⟨ ↑ ⟩) 
 | skip_var n Γ A B : lookup_tvar n Γ A -> lookup_tvar n (cons (entry_var B) Γ) A

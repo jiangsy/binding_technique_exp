@@ -8,6 +8,8 @@ Require Import common.ltac_ln.
 Require Import common.prop_ln.
 Require Import fsub.lngen.def_extra.
 
+From Coq Require Import ssreflect ssrfun ssrbool.
+
 Lemma wf_typ_lc_typ Γ A :
   Γ ⊢ A -> 
   lc_typ A.
@@ -17,14 +19,17 @@ Proof.
     eapply lc_typ_all_exists with X; eauto.
 Qed.
 
-Lemma subtyping_lc_typ Γ A B :
-  Γ ⊢ A <: B -> 
-  lc_typ A /\ lc_typ B.
+Lemma wf_typ_tvar_upper : forall Γ A,
+  Γ ⊢ A ->
+  tvar_in_typ A [<=] dom Γ.
 Proof.
-  intros. induction H; try hauto ctrs:lc_typ use:wf_typ_lc_typ.
-  - split; pick fresh X; inst_cofinites_with X; 
-    eapply lc_typ_all_exists with X; hauto.
+  intros. induction H; simpl in *; try fsetdec.
+  - apply binds_In in H. fsetdec.
+  - pick fresh X. inst_cofinites_with X.
+    pose proof (tvar_in_typ_open_typ_wrt_typ_lower B (typ_var_f X)). fsetdec.
 Qed.
+
+Hint Resolve wf_typ_lc_typ : core.
 
 Lemma wf_typ_weakening Γ1 Γ2 Γ3 A :
   (Γ3 ++ Γ1) ⊢ A ->
@@ -33,7 +38,6 @@ Proof.
   intros. dependent induction H; try hauto ctrs:wf_typ.
   - eapply wf_typ_tvar; eauto. 
   - inst_cofinites_for wf_typ_all; eauto.
-    intros.   
     intros. inst_cofinites_with X.
     rewrite_env (((X, entry_tvar A) :: Γ3) ++ Γ2 ++ Γ1); eauto.
 Qed.
@@ -95,4 +99,30 @@ Corollary subtyping_wf_typ2 Γ A B :
   Γ ⊢ B.
 Proof.
   hauto use:subtyping_wf_typ.
+Qed.
+
+Hint Resolve subtyping_wf_typ1 subtyping_wf_typ2 : core.
+
+Lemma wf_typ_subst_tvar Γ1 Γ2 X A B C : 
+  (Γ2 ++ (X, entry_tvar B) :: Γ1) ⊢ A ->
+  Γ1 ⊢ C ->
+  (map (subst_typ_in_entry C X) Γ2 ++ Γ1) ⊢ subst_typ_in_typ C X A.
+Proof.
+  intros. dependent induction H; simpl; try hauto ctrs:wf_typ.
+  - destruct_eq_atom; eauto. 
+    + rewrite_env (nil ++ map (subst_typ_in_entry C X) Γ2 ++ Γ1).
+      eapply wf_typ_weakening; hauto.
+    + apply binds_remove_mid in H; eauto.
+      apply binds_app_iff in H; inversion H. try hauto ctrs:typing.
+      * apply wf_typ_tvar with (A:=subst_typ_in_typ C X A); eauto.
+        replace (entry_tvar (subst_typ_in_typ C X A)) with (subst_typ_in_entry C X (entry_tvar A)) by auto.
+        eapply binds_map in H1. apply binds_app_iff. left. eauto.
+      * eapply wf_typ_tvar with (A:=A). apply binds_app_iff. hauto.
+  - inst_cofinites_for wf_typ_all; eauto.
+    intros. inst_cofinites_with X0.
+    rewrite_env (map (subst_typ_in_entry C X) ((X0, entry_tvar A) :: Γ2) ++ Γ1).
+    setoid_rewrite subst_typ_in_typ_open_typ_wrt_typ in H1; try hauto.
+    move : H1 => /(_ _ _ X) H1.
+    simpl in H1. destruct_eq_atom. 
+    eapply H1; hauto.
 Qed.

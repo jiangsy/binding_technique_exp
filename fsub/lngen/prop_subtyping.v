@@ -12,6 +12,13 @@ Require Import common.prop_ln.
 Require Import fsub.lngen.def_extra.
 Require Import fsub.lngen.prop_basic.
 
+Lemma subtyping_refl Γ A :
+  Γ ⊢ A ->
+  Γ ⊢ A <: A.
+Proof.
+  intros. induction H; hauto ctrs:subtyping, wf_typ.
+Qed.
+
 Lemma subtyping_narrowing' B :
   (forall Γ A C,  
     uniq Γ ->
@@ -34,7 +41,6 @@ Proof.
     + eapply sub_tvar_bound; eauto.
       eapply binds_rebind_mid; eauto.
   - inst_cofinites_for sub_all; eauto. 
-    + hauto ctrs:subtyping use:wf_typ_rebinding.
     + intros. inst_cofinites_with X0.
       rewrite_env (((X0, entry_tvar B1) :: Γ2) ++ (X, entry_tvar B') :: Γ1).
       eapply H2; eauto. simpl; auto.
@@ -82,3 +88,26 @@ Proof.
   intros. eapply subtyping_narrowing'; eauto.
   intros. eapply subtyping_transitivity; eauto.
 Qed.
+
+Lemma subtyping_subst Γ1 Γ2 X A B C C':
+  (Γ2 ++ (X, entry_tvar C) :: Γ1) ⊢ A <: B ->
+  ⊢ (Γ2 ++ (X, entry_tvar C) :: Γ1) ->
+  Γ1 ⊢ C' <: C ->
+  ((map (subst_typ_in_entry C' X) Γ2) ++ Γ1) ⊢ subst_typ_in_typ C' X A <: subst_typ_in_typ C' X B.
+Proof.
+  intros. dependent induction H; simpl; destruct_eq_atom; try hauto ctrs:subtyping use:wf_typ_subst_tvar, subtyping_wf_typ.
+  - eapply subtyping_refl; eauto.
+     hauto ctrs:subtyping use:wf_typ_subst_tvar, subtyping_wf_typ.
+  - apply binds_exact in H; auto. inversion H; subst.
+    + eapply subtyping_transitivity with (B:=C); eauto.
+      * admit. 
+      * rewrite_env (nil ++ (map (subst_typ_in_entry C' X) Γ2) ++ Γ1).
+        eapply subtyping_weakening; eauto.
+      * replace C with (subst_typ_in_typ C' X C) by admit.
+        eapply IHsubtyping; eauto.
+    + admit.
+  - admit.
+  - inst_cofinites_for sub_all; eauto.
+    intros. inst_cofinites_with X0.
+    admit.
+Admitted.

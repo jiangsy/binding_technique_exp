@@ -38,6 +38,20 @@ Inductive wf_typ : ctx -> typ -> Prop :=
   Γ ⊢ typ_all A B
 where "Γ ⊢ A" := (wf_typ Γ A).
 
+Reserved Notation "⊢ Γ" (at level 50, no associativity).
+Inductive wf_ctx : ctx -> Prop :=
+| wf_nil : 
+  ⊢ nil
+| wf_cons_tvar : forall Γ X A,
+  Γ ⊢ A ->
+  X `notin` dom Γ ->
+  ⊢ ((X, entry_tvar A) :: Γ)
+| wf_cons_var : forall Γ x A,
+  Γ ⊢ A ->
+  x `notin` dom Γ ->
+  ⊢ ((x, entry_var A) :: Γ)
+where "⊢ Γ" := (wf_ctx Γ).
+
 Reserved Notation "Γ ⊢ A <: B" (at level 50, A at next level, no associativity).
 Inductive subtyping : ctx -> typ -> typ -> Prop :=
 | sub_top : forall Γ A,
@@ -70,7 +84,7 @@ Inductive typing : ctx -> exp -> typ -> Prop :=
   binds x (entry_var A) Γ ->
   Γ ⊢ (exp_var_f x) : A
 | typing_abs : forall (L : atoms) (Γ : ctx) (A B : typ) (t : exp),
-  lc_typ A ->
+  Γ ⊢ A ->
   (forall x, 
     x `notin` L -> ((x , entry_var A) :: Γ) ⊢ open_exp_wrt_exp t (exp_var_f x) : B) ->
   Γ ⊢ (exp_abs A t) : (typ_arr A B)
@@ -79,6 +93,7 @@ Inductive typing : ctx -> exp -> typ -> Prop :=
   Γ ⊢ t : A ->
   Γ ⊢ (exp_app s t) : B
 | typing_tabs : forall (L : atoms) (Γ : ctx) (t : exp) (A B : typ),
+  Γ ⊢ A ->
   (forall X, X `notin` L -> 
     ((X , entry_tvar A) :: Γ) ⊢ (open_exp_wrt_typ t (typ_var_f X)) : open_typ_wrt_typ B (typ_var_f X)) ->
   Γ ⊢ (exp_tabs A t) : (typ_all A B)
