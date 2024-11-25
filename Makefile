@@ -74,7 +74,7 @@ ${COQ_MAKEFILE} : ${COQ_PROJECT}  .FILE_LIST
 coq-only: $(COQ_MAKEFILE)
 	${MAKE} -f ${COQ_MAKEFILE}
 
-coq: $(COQ_MAKEFILE) lngen autosubst2
+coq: lngen autosubst2 $(COQ_MAKEFILE)
 	${MAKE} -f ${COQ_MAKEFILE}
 
 clean-coq-only: 
