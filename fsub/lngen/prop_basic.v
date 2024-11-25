@@ -169,6 +169,15 @@ Qed.
 
 Hint Resolve subtyping_wf_typ1 subtyping_wf_typ2 : core.
 
+Lemma typing_lc_exp Γ t A :
+  Γ ⊢ t : A ->
+  lc_exp t.
+Proof.
+  intros. induction H; eauto using lc_exp.
+Qed.
+
+Hint Resolve typing_lc_exp : core.
+
 Lemma wf_typ_subst_tvar Γ1 Γ2 X A B C : 
   (Γ2 ++ (X, entry_tvar B) :: Γ1) ⊢ A ->
   Γ1 ⊢ C ->
@@ -207,4 +216,20 @@ Proof.
     + inversion H; subst.
       constructor; eauto.
       hauto use:wf_typ_subst_tvar.
+Qed.
+
+Lemma typing_weakening Γ1 Γ2 Γ3 t A :
+  (Γ3 ++ Γ1) ⊢ t : A ->
+  (Γ3 ++ Γ2 ++ Γ1) ⊢ t : A.
+Proof.
+  intros. dependent induction H; try 
+    hauto use:binds_weaken,wf_typ_weakening,subtyping_weakening,typing.
+  - inst_cofinites_for typing_abs.
+    + hauto use:wf_typ_weakening.
+    + intros. inst_cofinites_with x.
+      rewrite_env (((x, entry_var A) :: Γ3) ++ Γ2 ++ Γ1). eauto.
+  - inst_cofinites_for typing_tabs.
+    + hauto use:wf_typ_weakening.
+    + intros. inst_cofinites_with X.
+      rewrite_env (((X, entry_tvar A) :: Γ3) ++ Γ2 ++ Γ1). eauto.
 Qed.

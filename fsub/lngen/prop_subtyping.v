@@ -89,7 +89,7 @@ Proof.
   intros. eapply subtyping_transitivity; eauto.
 Qed.
 
-Lemma subtyping_subst Γ1 Γ2 X A B C C':
+Lemma subtyping_subst_tvar Γ1 Γ2 X A B C C':
   (Γ2 ++ (X, entry_tvar C) :: Γ1) ⊢ A <: B ->
   ⊢ (Γ2 ++ (X, entry_tvar C) :: Γ1) ->
   Γ1 ⊢ C' <: C ->
@@ -117,4 +117,24 @@ Proof.
     rewrite_env (map (subst_typ_in_entry C' X) ((X0 , entry_tvar B1) :: Γ2) ++ Γ1).
     eapply H2; simpl; eauto.
     constructor; eauto.
+Qed.
+
+Lemma wf_typ_subst_var Γ1 Γ2 x A B:
+  (Γ2 ++ (x, entry_var B) :: Γ1) ⊢ A ->
+  (Γ2 ++ Γ1) ⊢ A.
+Admitted.
+
+Lemma subtyping_subst_var Γ1 Γ2 x A B C:
+  (Γ2 ++ (x, entry_var C) :: Γ1) ⊢ A <: B ->
+  (Γ2 ++ Γ1) ⊢ A <: B.
+Proof.
+  intros. dependent induction H; try hauto ctrs:subtyping use:wf_typ_subst_var.
+  - eapply sub_tvar_bound with (A:=A); eauto.
+    eapply binds_remove_mid_diff_bind in H; hauto.
+  - inst_cofinites_for sub_all.
+    + hauto use:wf_typ_subst_var.
+    + eauto.
+    + intros. inst_cofinites_with X. 
+      rewrite_env (((X, entry_tvar B1) :: Γ2) ++ Γ1).
+      eapply H2. simpl; eauto.
 Qed.
