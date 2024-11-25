@@ -12,10 +12,7 @@ Require Import common.prop_ln.
 Require Import fsub.lngen.def_extra.
 Require Import fsub.lngen.prop_basic.
 
-Lemma conj' (A B : Prop) : A -> (A -> B) -> A /\ B.
-Proof. tauto. Qed.
-
-Lemma subtyping_narrowing' B:
+Lemma subtyping_narrowing' B :
   (forall Γ A C,  
     uniq Γ ->
     Γ ⊢ A <: B ->
@@ -43,14 +40,14 @@ Proof.
       eapply H2; eauto. simpl; auto.
 Qed.
 
-Theorem subtyping_transitivity n:
-  forall Γ A B C,
+Theorem subtyping_transitivity Γ A B C n :
   size_typ B < n -> 
   uniq Γ ->
   Γ ⊢ A <: B ->
   Γ ⊢ B <: C ->
   Γ ⊢ A <: C.
 Proof.
+  move : Γ A B C.
   induction n; intros; auto. inversion H.
   induction H1; subst; intros; try hauto ctrs:subtyping use:subtyping_wf_typ1, subtyping_wf_typ2.
   - inversion H2; eauto using subtyping.

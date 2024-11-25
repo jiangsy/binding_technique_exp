@@ -159,24 +159,17 @@ Theorem preservation Γ t t' A :
   Γ ⊢ t' : A.
 Proof.
   move => Huniq Hty Hstep. move : Γ A Hty Huniq. 
-    induction Hstep; intros; eauto using typing.
-  - inversion Hty; subst; eapply typing_app; eauto.
-  - inversion Hty; subst; eapply typing_app; eauto.
-  - inversion Hty; subst.
-    inversion H3; subst.
+    induction Hstep; intros; try hauto inv:typing ctrs:typing depth:2.
+  - ssimpl.
     pick fresh x. inst_cofinites_with x.
     eapply typing_subst_var0 with (s:=s) in H8; auto.
     rewrite subst_exp_in_exp_open_exp_wrt_exp in H8; eauto using typing_lc_exp.
-    simpl in H8. destruct_eq_atom.
+    qsimpl rew:db:ln simp+:destruct_eq_atom.
     rewrite subst_exp_in_exp_fresh_eq in H8; eauto.
-  - inversion Hty; subst.
-    eapply typing_tapp; eauto.
-  - inversion Hty; subst.
-    inversion H4; subst.
+  - ssimpl.
     pick fresh X. inst_cofinites_with X.
     eapply typing_subst_tvar0 with (B:=A) in H3; eauto.
-    qsimpl rew:db:ln simp+:destruct_eq_atom. subst.
-    rewrite H4.
+    qsimpl rew:db:ln simp+:destruct_eq_atom.
     rewrite subst_typ_in_typ_fresh_eq in H3; eauto.
     rewrite subst_typ_in_exp_fresh_eq in H3; eauto.
 Qed.

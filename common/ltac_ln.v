@@ -7,12 +7,18 @@ Ltac inst_cofinite_impl H x :=
         let Fr := fresh "Fr" in
           assert (x `notin` L) as Fr by auto;
         specialize (H x Fr); clear Fr
+    | forall x, (x `in` ?L -> False) -> _ =>
+        let Fr := fresh "Fr" in
+          assert (x `notin` L) as Fr by auto;
+        specialize (H x Fr); clear Fr
   end.
 
 Ltac inst_cofinites_with x :=
   repeat
     match goal with
       | H : forall x0, x0 `notin` ?L -> _ |- _ =>
+          inst_cofinite_impl H x
+      | H : forall x0, (x0 `in` ?L -> False) -> _ |- _ =>
           inst_cofinite_impl H x
     end.
 
