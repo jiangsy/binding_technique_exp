@@ -20,7 +20,7 @@ Definition ctx_tvar_rename Δ Δ' ξ :=
 Definition ctx_tvar_subst_wf Δ Δ' σ :=
   forall X A, lookup_tvar X Δ A -> Δ' ⊢ σ X.
 
-Lemma ctx_tvar_rename_weak_rebounding Δ1 Δ2 A A':
+Lemma ctx_tvar_rename_weak_rebinding Δ1 Δ2 A A':
   ctx_tvar_rename_weak (Δ2 ++ A :: Δ1)  (Δ2 ++ A' :: Δ1) id.
 Proof.
   intros. induction Δ2; simpl;
@@ -72,7 +72,7 @@ Lemma wf_typ_narrowing : forall Δ1 Δ2 A B C,
   Δ2 ++ B :: Δ1 ⊢ C.
 Proof.
   intros. eapply wf_typ_renaming_tvar' with (ξ:=id) in H; eauto.
-  - eapply ctx_tvar_rename_weak_rebounding; eauto.
+  - eapply ctx_tvar_rename_weak_rebinding; eauto.
   - asimpl; auto.
 Qed.
 

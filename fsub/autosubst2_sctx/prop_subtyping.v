@@ -51,7 +51,7 @@ Proof.
     eauto using lookup_tvar.
 Qed.
 
-Lemma lookup_tvar_rebounding : forall Γ1 Γ2 B,
+Lemma lookup_tvar_rebinding : forall Γ1 Γ2 B,
   lookup_tvar (num_tvars Γ2) (Γ2 ++ (entry_tvar B) :: Γ1) (B ⟨fun X => 1 + (num_tvars Γ2 + X) ⟩) /\
   (forall X A B', X <> num_tvars Γ2 -> 
     lookup_tvar X (Γ2 ++ (entry_tvar B) :: Γ1) A ->
@@ -117,25 +117,25 @@ Proof.
   - intros Htrans. intros. move : B' H1. dependent induction H0; intros; auto.
     + eapply sub_top.
       eapply wf_typ_renaming_tvar' with (ξ:=id); 
-        hauto use:ctx_tvar_rename_weak_rebounding simp+:asimpl.
+        hauto use:ctx_tvar_rename_weak_rebinding simp+:asimpl.
     + eapply sub_tvar_refl; eauto.
       eapply wf_typ_renaming_tvar' with (ξ:=id) (A:=typ_var X); 
-        hauto use:ctx_tvar_rename_weak_rebounding simp+:asimpl.
+        hauto use:ctx_tvar_rename_weak_rebinding simp+:asimpl.
     + edestruct (Nat.eq_dec X (num_tvars Γ2)).
       * subst. 
         eapply sub_tvar_bound with (A:=B' ⟨fun X => 1 + (num_tvars Γ2 + X) ⟩).
-        hauto use:lookup_tvar_rebounding. eapply Htrans with (B:=B ⟨fun X => 1 + (num_tvars Γ2 + X) ⟩).
+        hauto use:lookup_tvar_rebinding. eapply Htrans with (B:=B ⟨fun X => 1 + (num_tvars Γ2 + X) ⟩).
         -- hauto use:typ_size_renaming_eq.
         -- eapply sub_renaming_tvar; eauto.
            eapply ctx_tvar_renaming_tvars.
         -- erewrite (lookup_tvar_det _ _ (⟨fun X : nat => 1 + (num_tvars Γ2 + X)⟩ B)); eauto.
-           hauto use:lookup_tvar_rebounding.
+           hauto use:lookup_tvar_rebinding.
       * subst. eapply sub_tvar_bound; eauto.
-        eapply lookup_tvar_rebounding; eauto.
+        eapply lookup_tvar_rebinding; eauto.
     + hauto ctrs:subtyping.
     + eapply sub_all; try hauto ctrs:subtyping.
       * eapply wf_typ_renaming_tvar' with (ξ:=id); 
-        hauto use:ctx_tvar_rename_weak_rebounding simp+:asimpl.
+        hauto use:ctx_tvar_rename_weak_rebinding simp+:asimpl.
       * replace ((entry_tvar B1) :: Γ2 ++ (entry_tvar B') :: Γ1) with ((entry_tvar B1 :: Γ2) ++ (entry_tvar B') :: Γ1) by auto.
         eapply IHsubtyping2; eauto.
 Qed.

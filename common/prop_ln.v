@@ -21,3 +21,31 @@ Proof.
     + dependent destruction H1. auto.
     + auto.
 Qed.
+
+Lemma uniq_rebind : forall {T} ls1 ls2 X (b1 b2 : T),
+  uniq (ls2 ++ (X, b1) :: ls1) ->
+  uniq (ls2 ++ (X, b2) :: ls1).
+Proof.
+  intros. induction ls2; simpl in *; eauto.
+  - inversion H; eauto.
+  - destruct a. inversion H; eauto.
+Qed.
+
+Lemma binds_exact {T} ls1 ls2 X (b1 b2 : T) :
+  uniq (ls2 ++ (X, b2) :: ls1) ->
+  binds X b1 (ls2 ++ (X, b2) :: ls1) -> b1 = b2.
+Proof.
+  intros.
+  assert (binds X b2 (ls2 ++ (X, b2) :: ls1)) by auto.
+  unify_binds.
+Qed.
+
+Lemma binds_rebind_mid {T} : forall ls1 ls2 X Y (b1 b2 b2' : T),
+  X <> Y ->
+  binds X b1 (ls1 ++ (Y, b2'):: ls2) ->
+  binds X b1 (ls1 ++ (Y, b2) :: ls2).
+Proof.
+  intros. rewrite_env (ls1 ++ (Y ~ b2) ++ ls2).
+  rewrite_env (ls1 ++ (Y ~ b2') ++ ls2) in H0.
+  apply binds_weaken; eauto.
+Qed.

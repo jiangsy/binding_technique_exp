@@ -22,16 +22,16 @@ Ltac gather_atoms ::=
 
 Reserved Notation "Γ ⊢ A" (at level 50, no associativity).
 Inductive wf_typ : ctx -> typ -> Prop :=
-| wf_tvar : forall Γ X A,
+| wf_typ_tvar : forall Γ X A,
   binds X (entry_tvar A) Γ ->
   Γ ⊢ typ_var_f X
-| wf_top : forall Γ,
+| wf_typ_top : forall Γ,
   Γ ⊢ typ_top
-| wf_arr : forall Γ A B,
+| wf_typ_arr : forall Γ A B,
   Γ ⊢ A -> 
   Γ ⊢ B -> 
   Γ ⊢ typ_arr A B
-| wf_all : forall L Γ A B,
+| wf_typ_all : forall L Γ A B,
   Γ ⊢ A ->
   (forall X, X `notin` L ->
     ((X, entry_tvar A) :: Γ) ⊢ open_typ_wrt_typ B (typ_var_f X)) ->

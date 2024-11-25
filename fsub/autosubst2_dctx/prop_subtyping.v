@@ -43,7 +43,7 @@ Proof.
     hauto ctrs:lookup_tvar.
 Qed.
 
-Lemma lookup_tvar_rebounding : forall Δ1 Δ2 B,
+Lemma lookup_tvar_rebinding : forall Δ1 Δ2 B,
   lookup_tvar (length Δ2) (Δ2 ++ B :: Δ1) (B ⟨fun X => 1 + (length Δ2 + X) ⟩) /\
   (forall X A B', X <> length Δ2 -> 
     lookup_tvar X (Δ2 ++ B :: Δ1) A ->
@@ -70,9 +70,7 @@ Proof.
   - apply sub_top; auto.
 Qed.
 
-(* the size function is to relate B and (B ⟨ξ⟩) (more concretely, B and (B ⟨↑ >> ↑ ... >> ↑⟩) )
-   (this is a debrujin specific issue, I believe)
-   a more direct generalization to achieve this can be found at
+(* a more direct generalization to achieve this can be found at
    https://www.ps.uni-saarland.de/extras/autosubst2/poplmark/html/POPLMark.POPLMark.html#sub_trans'
    (this may only work in the well-scoped version)
 *)
@@ -113,25 +111,25 @@ Proof.
   - intros Htrans. intros. move : B' H1. dependent induction H0; intros; auto.
     + eapply sub_top.
       eapply wf_typ_renaming_tvar' with (ξ:=id); 
-        hauto use:ctx_tvar_rename_weak_rebounding simp+:asimpl.
+        hauto use:ctx_tvar_rename_weak_rebinding simp+:asimpl.
     + eapply sub_tvar_refl; eauto.
       eapply wf_typ_renaming_tvar' with (ξ:=id) (A:=typ_var X); 
-        hauto use:ctx_tvar_rename_weak_rebounding simp+:asimpl.
+        hauto use:ctx_tvar_rename_weak_rebinding simp+:asimpl.
     + edestruct (Nat.eq_dec X (length Δ2)).
       * subst. 
         eapply sub_tvar_bound with (A:=B' ⟨fun X => 1 + (length Δ2 + X) ⟩).
-        hauto use:lookup_tvar_rebounding. eapply Htrans with (B:=B ⟨fun X => 1 + (length Δ2 + X) ⟩).
+        hauto use:lookup_tvar_rebinding. eapply Htrans with (B:=B ⟨fun X => 1 + (length Δ2 + X) ⟩).
         -- hauto use:typ_size_renaming_eq.
         -- eapply sub_renaming_tvar; eauto.
            eapply ctx_tvar_renaming_tvars.
         -- erewrite (lookup_tvar_det _ _ (⟨fun X : nat => 1 + (length Δ2 + X)⟩ B)); eauto.
-           hauto use:lookup_tvar_rebounding.
+           hauto use:lookup_tvar_rebinding.
       * subst. eapply sub_tvar_bound; eauto.
-        eapply lookup_tvar_rebounding; eauto.
+        eapply lookup_tvar_rebinding; eauto.
     + hauto ctrs:subtyping.
     + eapply sub_all; try hauto ctrs:subtyping.
       * eapply wf_typ_renaming_tvar' with (ξ:=id); 
-        hauto use:ctx_tvar_rename_weak_rebounding simp+:asimpl.
+        hauto use:ctx_tvar_rename_weak_rebinding simp+:asimpl.
       * replace (B1 :: Δ2 ++ B' :: Δ1) with ((B1 :: Δ2) ++ B' :: Δ1) by auto.
         eapply IHsubtyping2; eauto.
 Qed.
