@@ -100,14 +100,21 @@ Proof.
      hauto ctrs:subtyping use:wf_typ_subst_tvar, subtyping_wf_typ.
   - apply binds_exact in H; auto. inversion H; subst.
     + eapply subtyping_transitivity with (B:=C); eauto.
-      * admit. 
+      * eapply wf_ctx_uniq. eapply wf_ctx_subst_tvar; eauto.
       * rewrite_env (nil ++ (map (subst_typ_in_entry C' X) Γ2) ++ Γ1).
         eapply subtyping_weakening; eauto.
-      * replace C with (subst_typ_in_typ C' X C) by admit.
+      * erewrite <- subst_typ_in_typ_fresh_eq with (A2:=C).
         eapply IHsubtyping; eauto.
-    + admit.
-  - admit.
+        rewrite wf_typ_tvar_upper; eauto.  
+        hauto inv:wf_ctx use:wf_ctx_strengthening.
+  - eapply sub_tvar_bound; eauto.
+    eapply binds_tvar_subst_tvar; eauto.
   - inst_cofinites_for sub_all; eauto.
     intros. inst_cofinites_with X0.
-    admit.
-Admitted.
+    setoid_rewrite subst_typ_in_typ_open_typ_wrt_typ in H2; try hauto use:subtyping_wf_typ.
+    move : H2 => /(_ _ _ X) => H2.
+    simpl in H2. destruct_eq_atom.
+    rewrite_env (map (subst_typ_in_entry C' X) ((X0 , entry_tvar B1) :: Γ2) ++ Γ1).
+    eapply H2; simpl; eauto.
+    constructor; eauto.
+Qed.

@@ -22,7 +22,10 @@ Proof.
   intros. dependent induction H; simpl; eauto using typing.
   - econstructor.
     + hauto use:subst_typ_in_typ_lc_typ, subtyping_wf_typ, wf_typ_lc_typ.
-    + admit.
+    + eapply binds_var_subst_tvar; eauto.
+      unfold not. intros. subst.
+      assert (binds X (entry_tvar B) (Γ2 ++ (X, entry_tvar B) :: Γ1)); eauto.
+      unify_binds.
   - inst_cofinites_for typing_abs. 
     + eapply wf_typ_subst_tvar; eauto.
     + intros. inst_cofinites_with x.
@@ -44,7 +47,7 @@ Proof.
     + hauto use:subtyping_wf_typ.
     + eapply typing_tapp; eauto. fold subst_typ_in_typ.
       eapply subtyping_subst with (C:=B); eauto.
-Admitted.
+Qed.
 
 Theorem preservation Γ t t' A : 
   uniq Γ ->

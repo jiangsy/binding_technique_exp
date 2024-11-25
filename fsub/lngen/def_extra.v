@@ -43,10 +43,12 @@ Inductive wf_ctx : ctx -> Prop :=
 | wf_nil : 
   ⊢ nil
 | wf_cons_tvar : forall Γ X A,
+  ⊢ Γ ->
   Γ ⊢ A ->
   X `notin` dom Γ ->
   ⊢ ((X, entry_tvar A) :: Γ)
 | wf_cons_var : forall Γ x A,
+  ⊢ Γ ->
   Γ ⊢ A ->
   x `notin` dom Γ ->
   ⊢ ((x, entry_var A) :: Γ)

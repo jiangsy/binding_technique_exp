@@ -29,6 +29,72 @@ Proof.
     pose proof (tvar_in_typ_open_typ_wrt_typ_lower B (typ_var_f X)). fsetdec.
 Qed.
 
+Lemma wf_ctx_uniq Γ :
+  ⊢ Γ ->
+  uniq Γ.
+Proof.
+  intros. induction H; eauto.
+Qed. 
+
+Lemma wf_ctx_strengthening Γ1 Γ2 :
+  ⊢ (Γ2 ++ Γ1) ->
+  ⊢ Γ1.
+Proof.
+  intros. induction Γ2; hauto inv:wf_ctx.
+Qed.
+
+Hint Resolve wf_ctx_uniq : core.
+
+Lemma binds_entry_upper X E Γ :
+  binds X E Γ ->
+  ⊢ Γ ->
+  tvar_in_entry E [<=] dom Γ.
+Proof.
+  intros. induction Γ.
+  - inversion H.
+  - ssimpl; destruct_binds.
+    + inversion H0; subst; auto. 
+      rewrite <- wf_typ_tvar_upper; eauto. fsetdec.
+      rewrite <- wf_typ_tvar_upper; eauto. fsetdec.
+    + inversion H0; subst; auto; rewrite IHΓ; eauto; fsetdec.
+Qed.
+
+Lemma binds_subst_tvar Γ1 Γ2 X Y A B E:
+  ⊢ (Γ2 ++ (Y, entry_tvar A) :: Γ1) ->
+  binds X E (Γ2 ++ (Y, entry_tvar A) :: Γ1) ->
+  X <> Y ->
+  Γ1 ⊢ B ->
+  binds X (subst_typ_in_entry B Y E) (map (subst_typ_in_entry B Y) Γ2 ++ Γ1).
+Proof.
+  intros. induction Γ2; simpl; eauto.
+  - destruct_binds. ssimpl.
+    rewrite subst_typ_in_entry_fresh_eq; eauto.
+    rewrite binds_entry_upper; eauto.
+  - destruct a; ssimpl.
+    destruct_binds; eauto.
+    inversion H; subst; eauto.
+Qed.
+
+Corollary binds_tvar_subst_tvar Γ1 Γ2 X Y A B C :
+  ⊢ (Γ2 ++ (Y, entry_tvar A) :: Γ1) ->
+  binds X (entry_tvar C) (Γ2 ++ (Y, entry_tvar A) :: Γ1) ->
+  X <> Y ->
+  Γ1 ⊢ B ->
+  binds X (entry_tvar (subst_typ_in_typ B Y C)) (map (subst_typ_in_entry B Y) Γ2 ++ Γ1).
+Proof.
+  hauto use:binds_subst_tvar.
+Qed.
+
+Corollary binds_var_subst_tvar Γ1 Γ2 X Y A B C :
+  ⊢ (Γ2 ++ (Y, entry_tvar A) :: Γ1) ->
+  binds X (entry_var C) (Γ2 ++ (Y, entry_tvar A) :: Γ1) ->
+  X <> Y ->
+  Γ1 ⊢ B ->
+  binds X (entry_var (subst_typ_in_typ B Y C)) (map (subst_typ_in_entry B Y) Γ2 ++ Γ1).
+Proof.
+  hauto use:binds_subst_tvar.
+Qed.
+
 Hint Resolve wf_typ_lc_typ : core.
 
 Lemma wf_typ_weakening Γ1 Γ2 Γ3 A :
@@ -125,4 +191,20 @@ Proof.
     move : H1 => /(_ _ _ X) H1.
     simpl in H1. destruct_eq_atom. 
     eapply H1; hauto.
+Qed.
+
+Lemma wf_ctx_subst_tvar Γ1 Γ2 X A B : 
+  ⊢ (Γ2 ++ (X, entry_tvar A) :: Γ1) ->
+  Γ1 ⊢ B ->
+  ⊢ (map (subst_typ_in_entry B X) Γ2 ++ Γ1).
+Proof.
+  intros. induction Γ2; simpl.
+  - hauto inv:wf_ctx use:wf_typ_subst_tvar.
+  - destruct a; destruct e; simpl.
+    + inversion H; subst.
+      constructor; eauto.
+      hauto use:wf_typ_subst_tvar.
+    + inversion H; subst.
+      constructor; eauto.
+      hauto use:wf_typ_subst_tvar.
 Qed.
