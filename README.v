@@ -84,7 +84,7 @@ Section fsub.
   Goal True. idtac "". idtac "". idtac "System F-sub". idtac "". idtac "". Abort.
 
   Section autosubst2_dctx.
-    Goal True. idtac "". idtac "Autosusbt2". idtac "". Abort.
+    Goal True. idtac "". idtac "Autosusbt2 (Double Contexts [Type / Term])". idtac "". Abort.
 
     Import fsub.autosubst2_dctx.def_as2.
     Import fsub.autosubst2_dctx.def_extra.
@@ -102,7 +102,7 @@ Section fsub.
   (* for reference, this is another version using combined context, with plain De Brujin *)
   (* https://www.seas.upenn.edu/~plclub/poplmark/vouillon.html *)
   Section autosubst2_sctx.
-    Goal True. idtac "". idtac "Autosusbt2". idtac "". Abort.
+    Goal True. idtac "". idtac "Autosusbt2 (Single Context [Type + Term])". idtac "". Abort.
 
     Import fsub.autosubst2_sctx.def_as2.
     Import fsub.autosubst2_sctx.def_extra.
