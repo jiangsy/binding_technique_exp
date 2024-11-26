@@ -82,7 +82,8 @@ Proof.
     rewrite_env (((X, entry_tvar) :: Γ2) ++ Γ1).
     setoid_rewrite subst_exp_in_exp_open_exp_wrt_typ in H0; eauto.
     move : H0 => /(_ _ _ x) H0. 
-    simpl in H0. destruct_eq_atom. eapply H0; simpl; eauto.
+    simpl in H0. destruct_eq_atom. 
+    eapply H0; simpl; eauto.
 Qed.
 
 Hint Rewrite -> subst_typ_in_typ_open_typ_wrt_typ subst_typ_in_exp_open_exp_wrt_typ : ln.
@@ -97,9 +98,8 @@ Proof.
   - econstructor; eauto using subst_typ_in_typ_lc_typ.
     replace (entry_var (subst_typ_in_typ B X A)) with (subst_typ_in_entry B X (entry_var A)) by auto.
     eapply binds_map; eauto.
-    apply binds_remove_mid in H0; eauto. unfold not. intros. subst.
-    assert (binds X (entry_tvar) (Γ2 ++ (X, entry_tvar) :: Γ1)) by auto.
-    unify_binds.
+    apply binds_remove_mid in H0; eauto. 
+    hauto use:binds_exact.
   - inst_cofinites_for typing_abs.
     hauto use:subst_typ_in_typ_lc_typ.
     intros. inst_cofinites_with x.
@@ -112,11 +112,10 @@ Proof.
     setoid_rewrite subst_typ_in_exp_open_exp_wrt_typ in H0; auto.
     setoid_rewrite subst_typ_in_typ_open_typ_wrt_typ in H0; auto.
     move : H0 => /(_ _ _ X) H0.
-    simpl in H0. destruct_eq_atom. 
-    eapply H0; eauto. simpl; eauto.
+    simpl in H0. destruct_eq_atom.
+    eapply H0; eauto. sfirstorder.
   - rewrite subst_typ_in_typ_open_typ_wrt_typ; eauto.
-    econstructor; eauto.
-    eapply subst_typ_in_typ_lc_typ; eauto.
+    sauto lq: on use: subst_typ_in_typ_lc_typ.
 Qed.
 
 Lemma typing_subst_var0 Γ x t s A B :
@@ -162,16 +161,13 @@ Proof.
     induction Hstep; intros; try hauto inv:typing ctrs:typing depth:2.
   - ssimpl.
     pick fresh x. inst_cofinites_with x.
-    eapply typing_subst_var0 with (s:=s) in H8; auto.
-    rewrite subst_exp_in_exp_open_exp_wrt_exp in H8; eauto using typing_lc_exp.
-    qsimpl rew:db:ln simp+:destruct_eq_atom.
-    rewrite subst_exp_in_exp_fresh_eq in H8; eauto.
+    erewrite subst_exp_in_exp_intro; eauto.
+    eapply typing_subst_var0; eauto.
   - ssimpl.
     pick fresh X. inst_cofinites_with X.
-    eapply typing_subst_tvar0 with (B:=A) in H3; eauto.
-    qsimpl rew:db:ln simp+:destruct_eq_atom.
-    rewrite subst_typ_in_typ_fresh_eq in H3; eauto.
-    rewrite subst_typ_in_exp_fresh_eq in H3; eauto.
+    erewrite subst_typ_in_typ_intro; eauto.
+    erewrite subst_typ_in_exp_intro; eauto.
+    eapply typing_subst_tvar0; eauto.
 Qed.
 
 Theorem progress t A :

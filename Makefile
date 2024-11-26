@@ -15,7 +15,7 @@ else
 endif
 
 SYSTEMS := systemf stlc fsub
-IGNORE_DIRS := "test"
+IGNORE_DIRS := test
 
 # https://stackoverflow.com/questions/3774568/makefile-issue-smart-way-to-scan-directory-tree-for-c-files
 rwildcard=$(wildcard $(addsuffix $2, $1))$(foreach d,$(wildcard $(addsuffix *, $1)),$(call rwildcard,$d/,$2))
