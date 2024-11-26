@@ -22,11 +22,8 @@ Proof.
   - pick fresh X. inst_cofinites_with X.
     eapply lc_typ_all_exists; eauto.
   - inversion IHtyping; subst. pick fresh X. inst_cofinites_with X.
-    specialize (H2 X).
-    eapply subst_typ_in_typ_lc_typ with (X1:=X) (A2:=B) in H2; eauto.
-    rewrite subst_typ_in_typ_open_typ_wrt_typ in H2; eauto.
-    simpl in H2. destruct_eq_atom.
-    rewrite subst_typ_in_typ_fresh_eq in H2; eauto.
+    erewrite subst_typ_in_typ_intro; eauto.
+    eapply subst_typ_in_typ_lc_typ; eauto.
 Qed.
 
 Lemma typing_lc_exp : forall Γ t A, Γ ⊢ t : A -> lc_exp t.
@@ -76,13 +73,13 @@ Proof.
     rewrite_env (((x0, entry_var A) :: Γ2) ++ Γ1).
     setoid_rewrite subst_exp_in_exp_open_exp_wrt_exp in H1; eauto.
     move : H1 => /(_ _ _ x) H1. 
-    simpl in H1. destruct_eq_atom. eapply H1; simpl; eauto.
+    simpl in H1. destruct_eq_atom. 
+    eapply H1; simpl; eauto.
   - inst_cofinites_for typing_tabs; eauto.
     intros. inst_cofinites_with X.
     rewrite_env (((X, entry_tvar) :: Γ2) ++ Γ1).
     setoid_rewrite subst_exp_in_exp_open_exp_wrt_typ in H0; eauto.
     move : H0 => /(_ _ _ x) H0. 
-    simpl in H0. destruct_eq_atom. 
     eapply H0; simpl; eauto.
 Qed.
 

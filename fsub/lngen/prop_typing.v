@@ -110,18 +110,13 @@ Proof.
     induction Hstep; intros; try hauto inv:typing ctrs:typing depth:2.
   - ssimpl.
     pick fresh x. inst_cofinites_with x.
-    eapply typing_subst_var0 with (Γ:=Γ) in H8; eauto using wf_ctx.
-    rewrite subst_exp_in_exp_open_exp_wrt_exp in H8; eauto.
-    simpl in H8. destruct_eq_atom.
-    rewrite subst_exp_in_exp_fresh_eq in H8; eauto.
+    erewrite subst_exp_in_exp_intro; eauto.
+    eapply typing_subst_var0; eauto using wf_ctx.
   - ssimpl.
     pick fresh X. inst_cofinites_with X.
-    eapply typing_subst_tvar0 in H7; eauto using wf_ctx.
-    rewrite subst_typ_in_exp_open_exp_wrt_typ in H7; eauto.
-    rewrite subst_typ_in_typ_open_typ_wrt_typ in H7; eauto.
-    simpl in H7; destruct_eq_atom.
-    rewrite subst_typ_in_exp_fresh_eq in H7; eauto.
-    rewrite subst_typ_in_typ_fresh_eq in H7; eauto.
+    erewrite subst_typ_in_exp_intro; eauto.
+    erewrite subst_typ_in_typ_intro; eauto.
+    eapply typing_subst_tvar0; eauto using wf_ctx.
 Qed.
 
 Lemma value_arr_inv t A B :

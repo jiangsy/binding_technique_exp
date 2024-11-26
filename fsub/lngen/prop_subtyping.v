@@ -111,7 +111,8 @@ Proof.
     eapply binds_tvar_subst_tvar; eauto.
   - inst_cofinites_for sub_all; eauto.
     intros. inst_cofinites_with X0.
-    setoid_rewrite subst_typ_in_typ_open_typ_wrt_typ in H2; try hauto use:subtyping_wf_typ.
+    setoid_rewrite subst_typ_in_typ_open_typ_wrt_typ in H2; 
+    try hauto use:subtyping_wf_typ.
     move : H2 => /(_ _ _ X) => H2.
     simpl in H2. destruct_eq_atom.
     rewrite_env (map (subst_typ_in_entry C' X) ((X0 , entry_tvar B1) :: Γ2) ++ Γ1).
@@ -122,7 +123,14 @@ Qed.
 Lemma wf_typ_subst_var Γ1 Γ2 x A B:
   (Γ2 ++ (x, entry_var B) :: Γ1) ⊢ A ->
   (Γ2 ++ Γ1) ⊢ A.
-Admitted.
+Proof.
+  intros. dependent induction H; eauto using wf_typ.
+  - apply binds_remove_mid_diff_bind in H; hauto use:wf_typ.
+  - inst_cofinites_for wf_typ_all; eauto. intros. 
+    inst_cofinites_with X.
+    rewrite_env (((X, entry_tvar A) :: Γ2) ++ Γ1).
+    eapply H1; simpl; eauto.
+Qed.
 
 Lemma subtyping_subst_var Γ1 Γ2 x A B C:
   (Γ2 ++ (x, entry_var C) :: Γ1) ⊢ A <: B ->
