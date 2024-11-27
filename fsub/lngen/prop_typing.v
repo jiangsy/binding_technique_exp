@@ -32,8 +32,7 @@ Proof.
       rewrite_env ((map (subst_typ_in_entry C X) ((x, entry_var A) :: Γ2)) ++ Γ1).
       setoid_rewrite subst_typ_in_exp_open_exp_wrt_exp in H1; try hauto use:subtyping_wf_typ.
       move : H1 => /(_ _ _ X) H1. simpl in H1. destruct_eq_atom.
-      eapply H1; simpl; eauto.
-      eapply wf_cons_var; eauto.
+      eapply H1; hauto use:wf_ctx solve+:eauto.
   - inst_cofinites_for typing_tabs.
     + eapply wf_typ_subst_tvar; eauto.
     + intros. inst_cofinites_with X0.
@@ -41,8 +40,8 @@ Proof.
       setoid_rewrite subst_typ_in_typ_open_typ_wrt_typ in H1; try hauto use:subtyping_wf_typ.
       setoid_rewrite subst_typ_in_exp_open_exp_wrt_typ in H1; try hauto use:subtyping_wf_typ.
       move : H1 => /(_ _ _ X) H1.
-      simpl in H1. destruct_eq_atom. eapply H1; simpl; eauto.
-      eapply wf_cons_tvar; eauto.
+      simpl in H1. destruct_eq_atom.
+      eapply H1; hauto use:wf_ctx solve+:eauto.
   - rewrite subst_typ_in_typ_open_typ_wrt_typ.
     + hauto use:subtyping_wf_typ.
     + eapply typing_tapp; eauto. fold subst_typ_in_typ.
@@ -68,14 +67,14 @@ Proof.
       setoid_rewrite subst_exp_in_exp_open_exp_wrt_exp in H1; eauto.
       move : H1 => /(_ _ _ x) => H1; eauto.
       simpl in H1. destruct_eq_atom. 
-      rewrite_env (((x0, entry_var A) :: Γ2) ++ Γ1). eapply H1; simpl; eauto.
-      constructor; eauto. 
+      rewrite_env (((x0, entry_var A) :: Γ2) ++ Γ1). 
+      eapply H1; hauto use:wf_ctx solve+:eauto.
   - inst_cofinites_for typing_tabs.
     + hauto use:wf_typ_subst_var.
     + intros. inst_cofinites_with X.
       setoid_rewrite subst_exp_in_exp_open_exp_wrt_typ in H1; eauto.
-      rewrite_env (((X, entry_tvar A) :: Γ2) ++ Γ1). eapply H1; simpl; 
-      eauto using wf_ctx.
+      rewrite_env (((X, entry_tvar A) :: Γ2) ++ Γ1). 
+      eapply H1; hauto use:wf_ctx solve+:eauto.
   - eapply typing_tapp; eauto.
     eapply subtyping_subst_var; eauto. 
 Qed.

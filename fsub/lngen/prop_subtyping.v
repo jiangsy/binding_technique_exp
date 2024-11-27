@@ -43,7 +43,7 @@ Proof.
   - inst_cofinites_for sub_all; eauto. 
     + intros. inst_cofinites_with X0.
       rewrite_env (((X0, entry_tvar B1) :: Γ2) ++ (X, entry_tvar B') :: Γ1).
-      eapply H2; eauto. simpl; auto.
+      eapply H2; eauto. hauto.
 Qed.
 
 Theorem subtyping_transitivity Γ A B C n :
@@ -76,7 +76,7 @@ Proof.
         rewrite size_typ_open_typ_wrt_typ_rec_var; lia.
         rewrite_env (nil ++ ((X, entry_tvar B0) :: Γ)).
         eapply subtyping_narrowing'; eauto. intros.
-        eapply IHn; eauto. lia.
+        eapply IHn; sauto.
 Qed.
 
 Lemma subtyping_narrowing Γ1 Γ2 X A B B' C :
@@ -116,7 +116,7 @@ Proof.
     move : H2 => /(_ _ _ X) => H2.
     simpl in H2. destruct_eq_atom.
     rewrite_env (map (subst_typ_in_entry C' X) ((X0 , entry_tvar B1) :: Γ2) ++ Γ1).
-    eapply H2; simpl; eauto.
+    eapply H2; simpl; eauto. 
     constructor; eauto.
 Qed.
 
@@ -129,7 +129,7 @@ Proof.
   - inst_cofinites_for wf_typ_all; eauto. intros. 
     inst_cofinites_with X.
     rewrite_env (((X, entry_tvar A) :: Γ2) ++ Γ1).
-    eapply H1; simpl; eauto.
+    sauto lq:on.
 Qed.
 
 Lemma subtyping_subst_var Γ1 Γ2 x A B C:
@@ -144,5 +144,5 @@ Proof.
     + eauto.
     + intros. inst_cofinites_with X. 
       rewrite_env (((X, entry_tvar B1) :: Γ2) ++ Γ1).
-      eapply H2. simpl; eauto.
+      sauto lq:on.
 Qed.
