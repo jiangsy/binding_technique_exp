@@ -68,7 +68,6 @@ Inductive typing : ctx -> exp -> typ -> Prop :=
   Γ ⊢ (exp_app t s) : B
 | typing_tabs : forall Γ t A B,
   Γ ⊢ A ->
-  (* since lookup shift the found bound of var, no need to map (ren_entry ↑) here ? *)
   (entry_tvar A :: Γ) ⊢ t : B ->
   Γ ⊢ (exp_tabs A t) : (typ_all A B)
 | typing_tapp : forall Γ t A B A' B',
