@@ -22,8 +22,14 @@ This repository contains experiments with different (automatic) binding techniqu
 opam pin add coq 8.19.2
 ```
 
-- [`CoqHammer`](https://github.com/lukaszcz/coqhammer) (tested on version 1.3.2)
+- [`Metalib`](https://github.com/plclub/metalib) (tested on version dev)
 
+```bash
+opam repo add coq-extra-dev https://coq.inria.fr/opam/extra-dev
+opam install coq-metalib
+```
+
+- [`CoqHammer`](https://github.com/lukaszcz/coqhammer) (tested on version 1.3.2)
 
 ```bash
 opam repo add coq-released https://coq.inria.fr/opam/released
