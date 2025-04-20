@@ -4,7 +4,7 @@ This repository contains experiments with different (automatic) binding techniqu
 
 ## Overview
 
-`Readme.v` is a comprehensive entry file that lists all the mechanized properties.
+`README.v` is a comprehensive entry file that lists all the mechanized properties.
 
 `*/autosubst2/language.sig` contains the syntax definition for `autosubst2`, and `*/autosubst2/def_as2.v` contains the generated Coq definitions.
 
