@@ -58,7 +58,7 @@ autosubst2: ${AUTOSUBST2_OUTS}
 	sed -e "/Ott.ott_list_core/d" ${SED_FLAG} $@
 
 %/prop_ln.v: %/def_ott.v
-	lngen-new --coq $@ --coq-ott $(subst /,.,$*).def_ott $*/language.ott
+	lngen --coq $@ --coq-ott $(subst /,.,$*).def_ott $*/language.ott
 
 # a hack to force makefile to detect source file changes
 .FILE_LIST : ${LNGEN_OUTS} FORCE
